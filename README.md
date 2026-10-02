@@ -1,97 +1,46 @@
-# Haskell → TypeScript Morph
+# AI Visuals Hub
 
-A self-contained, dependency-free HTML animation that morphs a deliberately
-obfuscated Haskell function into its TypeScript explanation — token by token.
+A home for AI-generated marketing visuals — the rules, tools, skills, and
+templates used to create them, plus the outputs themselves.
 
-Built for a LinkedIn post and blog article about **readable vs. explainable**
-code: the idea that software no longer needs to be readable by a human reading
-it cold — it needs to be *explainable on demand*.
-
-## Why this exists
-
-This is an exercise in **AI-assisted animation**: taking a genuinely
-hard-to-read artifact (obfuscated Haskell) and using a well-designed visual to
-make it comprehensible in seconds. The morph from Haskell to TypeScript *is*
-the "explainable on demand" argument made visible — the animation is the
-explanation, not a decoration on top of it.
-
-The bet: when a complex idea is hard to hold in your head, a few seconds of
+The idea: when a complex idea is hard to hold in your head, a few seconds of
 well-designed motion can compress a page of reasoning into something you
-instantly get. This repo is that bet, shipped.
+instantly get. This repo is where those visuals live, and where the machinery
+to make more of them is kept.
 
-## How it was made
+## Layout
 
-- **The animation** — hand-built HTML/CSS/JS, zero dependencies. Motion runs
-  on the Web Animations API (vanilla `element.animate`), so the file opens in
-  any browser with no build step.
-- **The agent** — Claude wrote the animation and the TypeScript reference
-  implementation, prompted to explain the Haskell "as if you were explaining
-  it to my son or daughter but in TypeScript as a reference."
-- **The toolchain** — built with the motion-graphics skill stack: HyperFrames
-  (renders the page to MP4), the GSAP / Remotion / Three.js skill packs for
-  motion reference, and ffmpeg for any video post-work. The animation itself
-  stays dependency-free so it can be embedded anywhere.
-
-## What it does
-
-- Each Haskell token flies to its TypeScript twin and changes color on the way
-- Shared tokens (`f`, `g`, `h`, `p`) stay gold the whole way across
-- Words that change form (`let` → `const`, `True` → `true`) cross-fade mid-flight
-- The background shifts from Haskell purple to TypeScript blue
-- The `banana` letter tiles hop into `aaabnn` as the payoff
-- Caption changes from **"Can you read this?"** to **"Bubble sort, explained."**
-
-## Controls
-
-| Control | What it does |
-|---------|--------------|
-| Play / Restart | Run the morph or reset to Haskell |
-| Speed | 0.6× / 1× / 1.5× |
-| Format | 4:5 (1080×1350), 1:1 (1080×1080), 16:9 (1920×1080) |
-| Loop | On / Off — seamless loop for screen recording |
-| Clean view | Hides all chrome for recording; `Esc` to exit |
-
-## Usage
-
-Open `index.html` in any modern browser. No build step, no dependencies —
-just one file.
-
-To make a video: switch to **Clean view**, set **Loop** to **On**, and
-screen-record the frame. Or render the page to MP4 with
-[HyperFrames](https://github.com/arndvs/hyperframes).
-
-## The Haskell
-
-```haskell
-f :: String -> String
-f = g . h
-  where
-    h []     = []
-    h (x:xs) = h xs ++ [x]
-    g x =
-      let (y, z) = p x
-      in if y then z else g z
-    p []       = (True, [])
-    p [x]      = (True, [x])
-    p (x:y:xs)
-      | x > y     = let (a, b) = p (x:xs) in (False, y:b)
-      | otherwise = let (a, b) = p (y:xs) in (a, x:b)
+```
+ai-visuals/
+├── visuals/          ← The outputs. One folder per visual.
+│   └── haskell-to-typescript/
+│       ├── index.html    ← the animation (self-contained, zero deps)
+│       └── README.md     ← what it is, how it was made
+├── rules/            ← Design rules and conventions for making visuals
+├── tools/            ← Scripts and utilities used to build visuals
+├── skills/           ← Agent skills that encode the craft
+├── python/           ← Python helpers (rendering, post-processing)
+└── templates/        ← Reusable starting points for new visuals
 ```
 
-It's bubble sort. The `h` step reverses the string (pointless for sorting, but
-it's what makes the obfuscation work), `p` walks the line once swapping
-out-of-order neighbors, and `g` keeps walking until nobody swaps.
+## How to add a new visual
 
-## Credits
+1. **Copy a template** — start from `templates/` rather than a blank file.
+2. **Build it** — use the tools and skills in this repo; follow the rules.
+3. **Document it** — every visual gets a `README.md` in its folder: what it
+   shows, how it was made, what toolchain it used.
+4. **Ship it** — the visual is served from GitHub Pages at
+   `https://arndvs.github.io/ai-visuals/<visual-name>/`.
 
-- Original experiment and argument: [Geoffrey Huntley](https://ghuntley.com/) —
-  ["software doesn't need to be readable anymore. it needs to be explainable."](https://ghuntley.com/readable/)
-- The TypeScript reference implementation was generated by Claude, prompted to
-  explain the Haskell "as if you were explaining it to my son or daughter but
-  in TypeScript as a reference."
-- The animation was written by Claude using the motion-graphics skill stack
-  (HyperFrames, GSAP, Remotion, Three.js skill packs) and rendered to MP4 via
-  HyperFrames.
+## The toolchain
+
+Built with the motion-graphics skill stack:
+
+- **HyperFrames** — renders an HTML page to MP4 (free, no account)
+- **GSAP / Remotion / Three.js skill packs** — motion reference and patterns
+- **ffmpeg** — video post-work (cut, join, convert)
+- **Web Animations API** — the animations themselves stay dependency-free so
+  they embed anywhere
 
 ## License
 

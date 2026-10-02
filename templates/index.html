@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual Template</title>
+<style>
+  /* Visual template — start here.
+     Rules: one idea, payoff in 3s, text in frame, first frame = thumbnail,
+     motion is the explanation, zero dependencies, respect reduced-motion. */
+  :root {
+    --bg: #0f0f13;
+    --fg: #f5f3f7;
+    --accent: #7c6cf0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, sans-serif;
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+  }
+  .frame {
+    width: min(100%, 1080px);
+    aspect-ratio: 4 / 5;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 48px;
+  }
+  h1 { font-size: clamp(32px, 6vw, 72px); line-height: 1.05; margin: 0; }
+  .sub { font-size: clamp(16px, 2.5vw, 28px); opacity: 0.7; margin-top: 16px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div>
+      <h1>Your idea,<br>explained.</h1>
+      <p class="sub">The payoff lands in 3 seconds.</p>
+    </div>
+  </div>
+</body>
+</html>
