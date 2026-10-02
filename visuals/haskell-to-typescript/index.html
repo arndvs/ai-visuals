@@ -114,7 +114,18 @@ body { background: var(--bg); color: var(--fg); font-family: var(--display); }
 .frame[data-state="ts"] .tile { background: rgba(74,156,240,.17); border-color: rgba(122,182,255,.5); color: #ffffff; }
 .io { margin-top: 16px; font-family: var(--mono); font-size: 18px; color: rgba(239,234,248,.55); }
 .big { font-size: 46px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-align: right; }
-.big .b { color: #ffffff; }
+.big .b, .big .c { color: #ffffff; }
+.big { text-wrap: balance; max-width: 560px; }
+
+/* verified: a third state that holds on the trust line */
+.foot-left { position: relative; padding-right: 64px; }
+.check { position: absolute; left: 352px; top: 9px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #5fd39a; color: #0b1522; font: 700 24px/1 var(--display); opacity: 0; transform: scale(.2); transition: transform calc(520ms * var(--k)) cubic-bezier(.3,1.6,.5,1), opacity calc(300ms * var(--k)); }
+.frame[data-verified="true"] .check { opacity: 1; transform: scale(1); transition-delay: calc(650ms * var(--k)); }
+.frame[data-verified="true"] .tile { background: rgba(95,211,154,.16); border-color: rgba(95,211,154,.7); color: #ffffff; }
+.swap3 .c { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+.frame[data-verified="true"] .swap3 .b { opacity: 0; transform: translateY(-12px); filter: blur(4px); transition-delay: 0s; }
+.frame[data-verified="true"] .swap3 .c { opacity: 1; transform: none; filter: none; transition-delay: calc(350ms * var(--k)); }
+.io .c { color: #8fe3b8; }
 
 /* ---------- controls ---------- */
 .controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: center; }
@@ -141,11 +152,11 @@ body:not(.clean) .exit { display: none; }
 <div class="wrap">
   <header class="page-head chrome">
     <h1>Readable was a stand-in for trust</h1>
-    <p>Thirteen lines of deliberately obfuscated Haskell, rebuilt token by token as the TypeScript explanation. Translation is the demo. Verification is the point.</p>
+    <p>Thirteen lines of deliberately obfuscated Haskell, rebuilt token by token as the TypeScript explanation, then checked against its output. Translation is the demo. Verification is the point.</p>
   </header>
 
   <div class="stage" id="stage">
-    <div class="frame" id="frame" data-state="hs">
+    <div class="frame" id="frame" data-state="hs" data-verified="false">
       <div class="bg hs"></div>
       <div class="bg ts"></div>
       <div class="grain"></div>
@@ -155,11 +166,12 @@ body:not(.clean) .exit { display: none; }
       </div>
       <div class="area" id="area"></div>
       <div class="frame-foot">
-        <div>
+        <div class="foot-left">
           <div class="tiles" id="tiles"></div>
-          <div class="io swap"><span class="a">input: "banana"</span><span class="b">f("banana") → "aaabnn"</span></div>
+          <div class="check" aria-hidden="true">✓</div>
+          <div class="io swap swap3"><span class="a">input: "banana"</span><span class="b">f("banana") → "aaabnn"</span><span class="c">f("banana") === "aaabnn" · passes</span></div>
         </div>
-        <div class="big swap"><span class="a">Can you read this?</span><span class="b">Bubble sort, explained.<br><span style="font-size:.55em;opacity:.75">Readable was a stand-in for trust.</span></span></div>
+        <div class="big swap swap3"><span class="a">Can you read this?</span><span class="b">Bubble sort, explained.</span><span class="c">Readable was a stand-in for trust.</span></div>
       </div>
     </div>
   </div>
@@ -330,7 +342,7 @@ area.appendChild(layers.ts.el);
 const P = { hs: pairUp(layers.hs, layers.ts), ts: pairUp(layers.ts, layers.hs) };
 
 const FORMATS = { "4:5": [1080, 1350], "1:1": [1080, 1080], "16:9": [1920, 1080] };
-let format = "4:5", speed = 1, loopOn = true, state = "hs", busy = false, running = [], timer = null;
+let format = "4:5", speed = 1, loopOn = true, state = "hs", verified = false, busy = false, running = [], timer = null;
 
 /* banana tiles */
 const WORD = "banana", STEP = 58;
@@ -387,6 +399,8 @@ function setInstant(lang) {
   layers.hs.el.classList.toggle("show", lang === "hs");
   layers.ts.el.classList.toggle("show", lang === "ts");
   frame.dataset.state = lang;
+  verified = false;
+  frame.dataset.verified = "false";
   bananaTo(lang === "ts", 0, 1, true);
   state = lang;
   void frame.offsetWidth;
@@ -395,7 +409,38 @@ function setInstant(lang) {
 }
 
 function updateButtons() {
-  playBtn.textContent = state === "hs" ? "Translate to TypeScript" : "Back to Haskell";
+  playBtn.textContent = state === "hs" ? "Translate to TypeScript" : !verified ? "Verify the output" : "Back to Haskell";
+}
+
+async function verify() {
+  if (busy || state !== "ts" || verified) return;
+  busy = true;
+  const k = 1 / speed;
+  running = [];
+  frame.style.setProperty("--k", k);
+  frame.dataset.verified = "true";
+  if (!reduce) {
+    tiles.forEach((t, i) => {
+      const p = curPos[i];
+      running.push(t.animate([
+        { transform: X(p) },
+        { transform: `${X(p)} translateY(-10px) scale(1.08)` },
+        { transform: X(p) }
+      ], { duration: 460 * k, delay: p * 80 * k, easing: "cubic-bezier(.4,0,.2,1)" }));
+    });
+  }
+  running.push(frame.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 1200 * k }));
+  try { await Promise.all(running.map(a => a.finished)); } catch (e) {}
+  running = [];
+  verified = true;
+  busy = false;
+  updateButtons();
+}
+
+async function step() {
+  if (state === "hs") await morph("ts");
+  else if (!verified) await verify();
+  else await morph("hs");
 }
 
 /* the morph */
@@ -408,6 +453,8 @@ async function morph(to) {
   frame.style.setProperty("--k", k);
   B.el.classList.add("show");
   frame.dataset.state = to;
+  verified = false;
+  frame.dataset.verified = "false";
 
   if (reduce) {
     running.push(A.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400 * k, fill: "both" }));
@@ -479,15 +526,15 @@ function schedule() {
   clearTimeout(timer);
   if (!loopOn) return;
   timer = setTimeout(async () => {
-    await morph(state === "hs" ? "ts" : "hs");
+    await step();
     schedule();
-  }, state === "ts" ? 3800 : 2400);
+  }, state === "hs" ? 2400 : !verified ? 1600 : 3400);
 }
 
 /* controls */
 playBtn.addEventListener("click", async () => {
   await stopAll();
-  await morph(state === "hs" ? "ts" : "hs");
+  await step();
   schedule();
 });
 document.getElementById("restart").addEventListener("click", async () => {
