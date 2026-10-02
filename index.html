@@ -1,0 +1,532 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Haskell to TypeScript Morph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: a fixed-size video frame (scaled to fit) where each Haskell token flies to its TypeScript twin; page chrome sits quietly around it. */
+:root {
+  --bg: #f2f1f6;
+  --surface: #ffffff;
+  --fg: #1d1b26;
+  --muted: #696580;
+  --line: #dcd9e6;
+  --accent: #4f46c8;
+  --accent-fg: #ffffff;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* frame (deliberately one dark look in both themes) */
+  --frame-fg: #efeaf8;
+  --hs-dot: #a184e6;
+  --ts-dot: #4a9cf0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131219; --surface: #1c1b24; --fg: #ebe9f3; --muted: #9a96ad;
+    --line: #2e2c3a; --accent: #a99eff; --accent-fg: #15131e; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131219; --surface: #1c1b24; --fg: #ebe9f3; --muted: #9a96ad;
+  --line: #2e2c3a; --accent: #a99eff; --accent-fg: #15131e; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--display); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; display: flex; flex-direction: column; gap: 20px; }
+.page-head h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.page-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 62ch; }
+
+.stage {
+  position: relative; margin-inline: auto; overflow: hidden; border-radius: 16px;
+  width: min(100%, calc((100svh - 260px) * var(--arn)));
+  min-width: min(100%, 320px);
+  aspect-ratio: var(--ar);
+  box-shadow: 0 1px 0 var(--line), 0 18px 50px -24px rgba(20, 16, 40, .45);
+  background: #17111f;
+}
+
+/* ---------- the frame ---------- */
+.frame {
+  position: absolute; top: 0; left: 0; transform-origin: 0 0; overflow: hidden;
+  color: var(--frame-fg); font-family: var(--display);
+  --k: 1;
+}
+.bg { position: absolute; inset: 0; transition: opacity calc(1500ms * var(--k)) ease; }
+.bg.hs {
+  background:
+    radial-gradient(1100px 760px at 12% -5%, rgba(110, 88, 170, .55), transparent 62%),
+    radial-gradient(900px 700px at 105% 110%, rgba(150, 70, 140, .30), transparent 60%),
+    #17111f;
+}
+.bg.ts {
+  opacity: 0;
+  background:
+    radial-gradient(1100px 760px at 88% -5%, rgba(49, 120, 198, .52), transparent 62%),
+    radial-gradient(900px 700px at -5% 110%, rgba(30, 150, 160, .24), transparent 60%),
+    #0b1522;
+}
+.frame[data-state="ts"] .bg.ts { opacity: 1; }
+.grain { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.055) 1px, transparent 1.2px); background-size: 30px 30px; mask-image: linear-gradient(to bottom, #000, transparent 85%); }
+.frame.instant *, .frame.instant { transition: none !important; }
+
+.frame-head { position: absolute; left: 72px; right: 72px; top: 64px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.chip { display: inline-flex; align-items: center; gap: 14px; padding: 12px 24px 12px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13); font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.chip .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--hs-dot); box-shadow: 0 0 18px var(--hs-dot); transition: background calc(900ms * var(--k)), box-shadow calc(900ms * var(--k)); }
+.frame[data-state="ts"] .chip .dot { background: var(--ts-dot); box-shadow: 0 0 18px var(--ts-dot); }
+.tag { font-family: var(--mono); font-size: 20px; color: rgba(239,234,248,.5); letter-spacing: .02em; }
+
+.swap { display: inline-grid; }
+.swap > * { grid-area: 1 / 1; transition: opacity calc(650ms * var(--k)) ease, transform calc(650ms * var(--k)) cubic-bezier(.3,0,.2,1), filter calc(650ms * var(--k)) ease; }
+.swap .b { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+.frame[data-state="ts"] .swap .a { opacity: 0; transform: translateY(-12px); filter: blur(4px); }
+.frame[data-state="ts"] .swap .b { opacity: 1; transform: none; filter: none; transition-delay: calc(500ms * var(--k)); }
+
+.area { position: absolute; left: 72px; right: 72px; top: 170px; bottom: 210px; }
+.layer { position: absolute; top: 0; left: 0; margin: 0; width: max-content; font-family: var(--mono); font-size: 20px; line-height: 1.5; white-space: pre; transform-origin: 0 0; visibility: hidden; }
+.layer.show { visibility: visible; }
+.tok { display: inline-block; }
+.cm { font-style: italic; }
+.clone { position: absolute; top: 0; left: 0; display: inline-grid; font-family: var(--mono); font-size: 20px; line-height: 1.5; white-space: pre; transform-origin: 0 0; pointer-events: none; will-change: transform; }
+.clone > span { grid-area: 1 / 1; }
+
+/* Haskell syntax */
+.layer.hs { color: #ece5f7; }
+.hs .kw { color: #c6a6ff; }
+.hs .ty { color: #f4b2d3; }
+.hs .fn { color: #ffd27a; }
+.hs .op { color: #9a8db8; }
+.hs .cm { color: #8a7fa5; }
+.hs .str { color: #f8c98f; }
+/* TypeScript syntax */
+.layer.ts { color: #e2ebf8; }
+.ts .kw { color: #7cb3ff; }
+.ts .ty { color: #5edcc7; }
+.ts .fn { color: #ffd27a; }
+.ts .op { color: #8aa0c0; }
+.ts .cm { color: #6d87ad; }
+.ts .str { color: #ffc98a; }
+.ts .prop { color: #b6c8e2; }
+.ts .num { color: #f7a3a3; }
+
+.frame-foot { position: absolute; left: 72px; right: 72px; bottom: 64px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+.tiles { position: relative; height: 58px; width: 338px; }
+.tile { position: absolute; top: 0; left: 0; width: 50px; height: 58px; border-radius: 11px; display: grid; place-items: center; font-family: var(--mono); font-size: 27px; font-weight: 500; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: rgba(239,234,248,.72); transition: background calc(800ms * var(--k)), border-color calc(800ms * var(--k)), color calc(800ms * var(--k)); }
+.frame[data-state="ts"] .tile { background: rgba(74,156,240,.17); border-color: rgba(122,182,255,.5); color: #ffffff; }
+.io { margin-top: 16px; font-family: var(--mono); font-size: 18px; color: rgba(239,234,248,.55); }
+.big { font-size: 46px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-align: right; }
+.big .b { color: #ffffff; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: center; }
+.group { display: flex; align-items: center; gap: 8px; }
+.group .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.seg button { border: 0; background: transparent; color: var(--fg); font: 500 13px/1 var(--display); padding: 8px 11px; border-radius: 7px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 14px/1 var(--display); padding: 11px 16px; border-radius: 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); min-width: 200px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.5; margin: 0; }
+.note code { font-family: var(--mono); font-size: 12.5px; }
+
+/* clean view for screen recording */
+body.clean .chrome { display: none; }
+body.clean .wrap { padding-block: 16px; min-height: 100svh; justify-content: center; }
+body.clean .stage { width: min(100%, calc((100svh - 32px) * var(--arn))); box-shadow: none; }
+.exit { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; opacity: 0; transition: opacity .2s; }
+body:not(.clean) .exit { display: none; }
+.exit:hover, .exit:focus-visible { opacity: 1; }
+</style>
+
+<div class="wrap">
+  <header class="page-head chrome">
+    <h1>Haskell to TypeScript</h1>
+    <p>Thirteen lines of deliberately obfuscated Haskell, rebuilt token by token as the TypeScript explanation. The function names stay gold the whole way across.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="frame" id="frame" data-state="hs">
+      <div class="bg hs"></div>
+      <div class="bg ts"></div>
+      <div class="grain"></div>
+      <div class="frame-head">
+        <div class="chip"><span class="dot"></span><span class="swap"><span class="a">Haskell</span><span class="b">TypeScript</span></span></div>
+        <div class="tag">readable → explainable</div>
+      </div>
+      <div class="area" id="area"></div>
+      <div class="frame-foot">
+        <div>
+          <div class="tiles" id="tiles"></div>
+          <div class="io swap"><span class="a">input: "banana"</span><span class="b">f("banana") → "aaabnn"</span></div>
+        </div>
+        <div class="big swap"><span class="a">Can you read this?</span><span class="b">Bubble sort, explained.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls chrome">
+    <button class="btn primary" id="play" type="button">Translate to TypeScript</button>
+    <button class="btn" id="restart" type="button">Restart</button>
+    <div class="group"><span class="lbl">Speed</span>
+      <div class="seg" id="speed">
+        <button type="button" data-v="0.6" aria-pressed="false">0.6×</button>
+        <button type="button" data-v="1" aria-pressed="true">1×</button>
+        <button type="button" data-v="1.5" aria-pressed="false">1.5×</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Format</span>
+      <div class="seg" id="format">
+        <button type="button" data-v="4:5" aria-pressed="true">4:5</button>
+        <button type="button" data-v="1:1" aria-pressed="false">1:1</button>
+        <button type="button" data-v="16:9" aria-pressed="false">16:9</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Loop</span>
+      <div class="seg" id="loop">
+        <button type="button" data-v="on" aria-pressed="true">On</button>
+        <button type="button" data-v="off" aria-pressed="false">Off</button>
+      </div>
+    </div>
+    <button class="btn" id="clean" type="button">Clean view</button>
+  </div>
+  <p class="note chrome">To make a video, switch to Clean view and screen-record the loop, or render the page to MP4 with HyperFrames. Press <code>Space</code> to play, <code>Esc</code> to leave Clean view.</p>
+</div>
+<button class="btn exit" id="exit" type="button">Exit clean view</button>
+
+<script>
+const HS = String.raw`f :: String -> String
+f = g . h
+  where
+    h []     = []
+    h (x:xs) = h xs ++ [x]
+    g x =
+      let (y, z) = p x
+      in if y then z else g z
+    p []       = (True, [])
+    p [x]      = (True, [x])
+    p (x:y:xs)
+      | x > y     = let (a, b) = p (x:xs) in (False, y:b)
+      | otherwise = let (a, b) = p (y:xs) in (a, x:b)`;
+
+const TS = String.raw`// f: reverse the letters, then sort them
+function f(s: string): string {
+  const letters = s.split("");
+  return g(h(letters)).join("");
+}
+
+// h: turn the line around (reverse)
+function h(list: string[]): string[] {
+  if (list.length === 0) return [];
+  const [x, ...xs] = list;
+  return [...h(xs), x];          // h xs ++ [x]
+}
+
+// p: walk down the line once, swapping neighbors that are out of order.
+// Returns [nobodySwapped, newLine]
+function p(list: string[]): [boolean, string[]] {
+  if (list.length <= 1) return [true, list];   // empty or one kid: already fine
+
+  const [x, y, ...xs] = list;
+  if (x > y) {
+    // Out of order: y steps in front, x keeps walking down the line
+    const [, rest] = p([x, ...xs]);
+    return [false, [y, ...rest]];              // someone swapped!
+  } else {
+    // In order: x stays, keep checking from y onward
+    const [nobodySwapped, rest] = p([y, ...xs]);
+    return [nobodySwapped, [x, ...rest]];
+  }
+}
+
+// g: keep walking the line until a whole walk has no swaps
+function g(list: string[]): string[] {
+  const [nobodySwapped, newLine] = p(list);
+  return nobodySwapped ? newLine : g(newLine);
+}
+
+console.log(f("banana"));   // "aaabnn"
+console.log(f("hello"));    // "ehllo"`;
+
+const FNS = new Set(["f", "g", "h", "p"]);
+const LANG = {
+  hs: { kw: new Set(["where", "let", "in", "if", "then", "else", "otherwise"]), types: new Set(["String", "True", "False"]),
+        comment: /^--.*/, ops: /^(::|->|\+\+|[=|<>()\[\],:.])/ },
+  ts: { kw: new Set(["function", "return", "const", "if", "else"]), types: new Set(["string", "boolean", "true", "false"]),
+        props: new Set(["console", "log", "split", "join", "length"]),
+        comment: /^\/\/.*/, ops: /^(\.\.\.|===|<=|>=|=>|[=|<>()\[\]{},:.;?!])/ }
+};
+// Haskell words that become a TypeScript word
+const NORM = { String: "string", True: "true", False: "false", let: "const" };
+const KEYABLE = new Set(["f", "g", "h", "p", "x", "xs", "y", "string", "true", "false", "if", "else", "const"]);
+
+function tokenize(line, lang) {
+  const L = LANG[lang], out = [];
+  let s = line;
+  while (s.length) {
+    let m;
+    if ((m = s.match(/^\s+/))) out.push({ t: m[0], ws: true });
+    else if ((m = s.match(L.comment))) out.push({ t: m[0], c: "cm" });
+    else if ((m = s.match(/^"(?:\\.|[^"\\])*"/))) out.push({ t: m[0], c: "str" });
+    else if ((m = s.match(/^\d+/))) out.push({ t: m[0], c: "num" });
+    else if ((m = s.match(/^[A-Za-z_][A-Za-z0-9_']*/))) {
+      const w = m[0];
+      let c = "id";
+      if (L.kw.has(w)) c = "kw";
+      else if (L.types.has(w)) c = "ty";
+      else if (FNS.has(w)) c = "fn";
+      else if (L.props && L.props.has(w)) c = "prop";
+      out.push({ t: w, c, ident: true });
+    }
+    else if ((m = s.match(L.ops))) out.push({ t: m[0], c: "op" });
+    else { m = [s[0]]; out.push({ t: s[0], c: "op" }); }
+    s = s.slice(m[0].length);
+  }
+  return out;
+}
+
+function build(lang, code) {
+  const pre = document.createElement("pre");
+  pre.className = "layer " + lang;
+  pre.setAttribute("aria-label", lang === "hs" ? "Haskell source" : "TypeScript source");
+  const toks = [];
+  const lines = code.split("\n");
+  lines.forEach((line, li) => {
+    if (li) pre.appendChild(document.createTextNode("\n"));
+    for (const tk of tokenize(line, lang)) {
+      if (tk.ws) { pre.appendChild(document.createTextNode(tk.t)); continue; }
+      const el = document.createElement("span");
+      el.className = "tok " + tk.c;
+      el.textContent = tk.t;
+      pre.appendChild(el);
+      const n = NORM[tk.t] || tk.t;
+      toks.push({ el, line: li, c: tk.c, text: tk.t, key: tk.ident && KEYABLE.has(n) ? n : null });
+    }
+  });
+  return { lang, el: pre, toks, lines: lines.length, ox: 0, oy: 0, s: 1 };
+}
+
+function pairUp(A, B) {
+  const byKey = new Map();
+  B.toks.forEach(t => { if (t.key) { if (!byKey.has(t.key)) byKey.set(t.key, []); byKey.get(t.key).push(t); } });
+  const pairs = [], usedA = new Set(), usedB = new Set(), idx = {};
+  A.toks.forEach(a => {
+    if (!a.key || !byKey.has(a.key)) return;
+    const list = byKey.get(a.key), i = idx[a.key] || 0;
+    if (i < list.length) { pairs.push([a, list[i]]); idx[a.key] = i + 1; usedA.add(a); usedB.add(list[i]); }
+  });
+  return { pairs, usedA, usedB };
+}
+
+const stage = document.getElementById("stage");
+const frame = document.getElementById("frame");
+const area = document.getElementById("area");
+const tilesEl = document.getElementById("tiles");
+const playBtn = document.getElementById("play");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const layers = { hs: build("hs", HS), ts: build("ts", TS) };
+area.appendChild(layers.hs.el);
+area.appendChild(layers.ts.el);
+const P = { hs: pairUp(layers.hs, layers.ts), ts: pairUp(layers.ts, layers.hs) };
+
+const FORMATS = { "4:5": [1080, 1350], "1:1": [1080, 1080], "16:9": [1920, 1080] };
+let format = "4:5", speed = 1, loopOn = true, state = "hs", busy = false, running = [], timer = null;
+
+/* banana tiles */
+const WORD = "banana", STEP = 58;
+const tiles = [...WORD].map(ch => { const t = document.createElement("div"); t.className = "tile"; t.textContent = ch; tilesEl.appendChild(t); return t; });
+const order = [...WORD].map((_, i) => i).sort((i, j) => (WORD[i] < WORD[j] ? -1 : WORD[i] > WORD[j] ? 1 : i - j));
+const sortedPos = []; order.forEach((tileIdx, slot) => { sortedPos[tileIdx] = slot; });
+const curPos = tiles.map((_, i) => i);
+const X = n => `translateX(${n * STEP}px)`;
+
+function bananaTo(sorted, delay, k, instant) {
+  tiles.forEach((t, i) => {
+    const from = curPos[i], to = sorted ? sortedPos[i] : i;
+    curPos[i] = to;
+    if (instant || reduce || from === to) { t.style.transform = X(to); return; }
+    const lift = (sorted ? -1 : 1) * (14 + Math.abs(to - from) * 6);
+    const a = t.animate([
+      { transform: X(from) },
+      { transform: `translateX(${((from + to) / 2) * STEP}px) translateY(${lift}px)` },
+      { transform: X(to) }
+    ], { duration: 780 * k, delay: delay + to * 70 * k, easing: "cubic-bezier(.45,0,.3,1)", fill: "both" });
+    running.push(a);
+    a.finished.then(() => { t.style.transform = X(to); }).catch(() => {});
+  });
+}
+
+/* sizing */
+function scaleFrame() {
+  const [FW] = FORMATS[format];
+  frame.style.transform = `scale(${stage.clientWidth / FW})`;
+}
+function fit() {
+  const W = area.clientWidth, H = area.clientHeight;
+  for (const L of Object.values(layers)) {
+    const w = L.el.offsetWidth, h = L.el.offsetHeight;
+    const s = Math.min(W / w, H / h, 1.6);
+    L.s = s;
+    L.ox = Math.round((W - w * s) / 2);
+    L.oy = Math.round((H - h * s) / 2);
+    L.el.style.transform = `translate(${L.ox}px, ${L.oy}px) scale(${s})`;
+  }
+}
+function applyFormat() {
+  const [FW, FH] = FORMATS[format];
+  frame.style.width = FW + "px";
+  frame.style.height = FH + "px";
+  stage.style.setProperty("--ar", `${FW} / ${FH}`);
+  stage.style.setProperty("--arn", (FW / FH).toFixed(4));
+  scaleFrame();
+  fit();
+}
+
+function setInstant(lang) {
+  frame.classList.add("instant");
+  layers.hs.el.classList.toggle("show", lang === "hs");
+  layers.ts.el.classList.toggle("show", lang === "ts");
+  frame.dataset.state = lang;
+  bananaTo(lang === "ts", 0, 1, true);
+  state = lang;
+  void frame.offsetWidth;
+  frame.classList.remove("instant");
+  updateButtons();
+}
+
+function updateButtons() {
+  playBtn.textContent = state === "hs" ? "Translate to TypeScript" : "Back to Haskell";
+}
+
+/* the morph */
+async function morph(to) {
+  if (busy || state === to) return;
+  busy = true;
+  const from = state, A = layers[from], B = layers[to], pr = P[from];
+  const k = 1 / speed;
+  running = [];
+  frame.style.setProperty("--k", k);
+  B.el.classList.add("show");
+  frame.dataset.state = to;
+
+  if (reduce) {
+    running.push(A.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400 * k, fill: "both" }));
+    running.push(B.el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400 * k, delay: 200 * k, fill: "both" }));
+  } else {
+    const outStep = 300 / A.lines, inStep = 1300 / B.lines;
+    A.toks.forEach(a => {
+      if (pr.usedA.has(a)) { a.el.style.visibility = "hidden"; return; }
+      running.push(a.el.animate([
+        { opacity: 1, filter: "blur(0px)", transform: "translateY(0px)" },
+        { opacity: 0, filter: "blur(7px)", transform: "translateY(-9px)" }
+      ], { duration: 480 * k, delay: a.line * outStep * k, easing: "cubic-bezier(.4,0,1,1)", fill: "both" }));
+    });
+    B.toks.forEach(b => {
+      if (pr.usedB.has(b)) { b.el.style.visibility = "hidden"; return; }
+      running.push(b.el.animate([
+        { opacity: 0, filter: "blur(7px)", transform: "translateY(9px)" },
+        { opacity: 1, filter: "blur(0px)", transform: "translateY(0px)" }
+      ], { duration: 640 * k, delay: (620 + b.line * inStep) * k, easing: "cubic-bezier(0,0,.2,1)", fill: "both" }));
+    });
+    pr.pairs.forEach(([a, b]) => {
+      const clone = document.createElement("span");
+      clone.className = "clone";
+      const x1 = A.ox + A.s * a.el.offsetLeft, y1 = A.oy + A.s * a.el.offsetTop;
+      const x2 = B.ox + B.s * b.el.offsetLeft, y2 = B.oy + B.s * b.el.offsetTop;
+      const c1 = getComputedStyle(a.el).color, c2 = getComputedStyle(b.el).color;
+      let sa = null, sb = null;
+      if (a.text === b.text) clone.textContent = a.text;
+      else {
+        sa = document.createElement("span"); sa.textContent = a.text;
+        sb = document.createElement("span"); sb.textContent = b.text; sb.style.opacity = "0";
+        clone.append(sa, sb);
+      }
+      area.appendChild(clone);
+      const delay = (180 + a.line * (220 / A.lines) * 3 + b.line * (260 / B.lines) * 3) * k;
+      const dur = 1200 * k;
+      const anim = clone.animate([
+        { transform: `translate(${x1}px, ${y1}px) scale(${A.s})`, color: c1 },
+        { transform: `translate(${x2}px, ${y2}px) scale(${B.s})`, color: c2 }
+      ], { duration: dur, delay, easing: "cubic-bezier(.68,0,.24,1)", fill: "both" });
+      running.push(anim);
+      if (sa) {
+        running.push(sa.animate([{ opacity: 1 }, { opacity: 0 }], { duration: dur * 0.45, delay: delay + dur * 0.3, fill: "both" }));
+        running.push(sb.animate([{ opacity: 0 }, { opacity: 1 }], { duration: dur * 0.45, delay: delay + dur * 0.3, fill: "both" }));
+      }
+      anim.finished.then(() => { b.el.style.visibility = ""; clone.remove(); }).catch(() => {});
+    });
+  }
+
+  bananaTo(to === "ts", (to === "ts" ? 1700 : 200) * k, k, false);
+
+  try { await Promise.all(running.map(a => a.finished)); } catch (e) {}
+  A.el.classList.remove("show");
+  running.forEach(a => a.cancel());
+  running = [];
+  area.querySelectorAll(".clone").forEach(c => c.remove());
+  A.toks.forEach(t => (t.el.style.visibility = ""));
+  B.toks.forEach(t => (t.el.style.visibility = ""));
+  state = to;
+  busy = false;
+  updateButtons();
+}
+
+function settle() { running.forEach(a => { try { a.finish(); } catch (e) {} }); }
+const tick = ms => new Promise(r => setTimeout(r, ms));
+async function stopAll() { clearTimeout(timer); if (busy) { settle(); while (busy) await tick(16); } }
+
+function schedule() {
+  clearTimeout(timer);
+  if (!loopOn) return;
+  timer = setTimeout(async () => {
+    await morph(state === "hs" ? "ts" : "hs");
+    schedule();
+  }, state === "ts" ? 3800 : 2400);
+}
+
+/* controls */
+playBtn.addEventListener("click", async () => {
+  await stopAll();
+  await morph(state === "hs" ? "ts" : "hs");
+  schedule();
+});
+document.getElementById("restart").addEventListener("click", async () => {
+  await stopAll();
+  setInstant("hs");
+  timer = setTimeout(async () => { await morph("ts"); schedule(); }, 900);
+});
+function segment(id, onPick) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    onPick(b.dataset.v);
+  });
+}
+segment("speed", v => { speed = parseFloat(v); });
+segment("format", async v => {
+  await stopAll();
+  format = v;
+  applyFormat();
+  setInstant(state);
+  schedule();
+});
+segment("loop", v => { loopOn = v === "on"; if (loopOn) schedule(); else clearTimeout(timer); });
+document.getElementById("clean").addEventListener("click", () => { document.body.classList.add("clean"); requestAnimationFrame(scaleFrame); });
+document.getElementById("exit").addEventListener("click", () => { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); }
+  if (e.key === " " && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); playBtn.click(); }
+});
+new ResizeObserver(scaleFrame).observe(stage);
+
+/* boot */
+(async () => {
+  try { await Promise.all([document.fonts.load('20px "IBM Plex Mono"'), document.fonts.load('700 26px "Bricolage Grotesque"')]); } catch (e) {}
+  applyFormat();
+  setInstant("hs");
+  timer = setTimeout(async () => { await morph("ts"); schedule(); }, 1400);
+})();
+</script>
+
+</body></html>
