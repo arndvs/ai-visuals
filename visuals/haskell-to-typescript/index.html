@@ -566,14 +566,24 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape") { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); }
   if (e.key === " " && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); playBtn.click(); }
 });
-new ResizeObserver(scaleFrame).observe(stage);
+new ResizeObserver(() => { scaleFrame(); fit(); }).observe(stage);
+
+/* re-fit when fonts finish loading — a cold click-through can resolve document.fonts.load()
+   before the Google Fonts stylesheet arrives, leaving layers positioned with fallback metrics */
+document.fonts.ready.then(() => { fit(); });
 
 /* boot */
 (async () => {
   try { await Promise.all([document.fonts.load('20px "IBM Plex Mono"'), document.fonts.load('700 26px "Bricolage Grotesque"')]); } catch (e) {}
   applyFormat();
   setInstant("hs");
-  timer = setTimeout(async () => { await morph("ts"); schedule(); }, 1400);
+  timer = setTimeout(async () => {
+    /* re-measure before the first morph — the iframe may have settled to its final
+       size since boot (click-through from a link), and stale scale/fit values scramble it */
+    applyFormat();
+    await morph("ts");
+    schedule();
+  }, 1400);
 })();
 </script>
 
