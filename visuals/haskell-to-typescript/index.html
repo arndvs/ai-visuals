@@ -32,13 +32,13 @@
 }
 body { background: var(--bg); color: var(--fg); font-family: var(--display); }
 
-.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; display: flex; flex-direction: column; gap: 20px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; height: 100svh; overflow: hidden; }
 .page-head h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
 .page-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 62ch; }
 
 .stage {
   position: relative; margin-inline: auto; overflow: hidden; border-radius: 16px;
-  width: min(100%, calc((100svh - 260px) * var(--arn)));
+  width: min(100%, calc((100svh - 250px) * var(--arn)));
   min-width: min(100%, 320px);
   aspect-ratio: var(--ar);
   box-shadow: 0 1px 0 var(--line), 0 18px 50px -24px rgba(20, 16, 40, .45);
@@ -137,8 +137,7 @@ body { background: var(--bg); color: var(--fg); font-family: var(--display); }
 .btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 14px/1 var(--display); padding: 11px 16px; border-radius: 10px; cursor: pointer; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); min-width: 200px; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.note { text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.5; margin: 0; }
-.note code { font-family: var(--mono); font-size: 12.5px; }
+
 
 /* clean view for screen recording */
 body.clean .chrome { display: none; }
@@ -201,7 +200,6 @@ body:not(.clean) .exit { display: none; }
     </div>
     <button class="btn" id="clean" type="button">Clean view</button>
   </div>
-  <p class="note chrome">To make a video, switch to Clean view and screen-record the loop, or render the page to MP4 with HyperFrames. Press <code>Space</code> to play, <code>Esc</code> to leave Clean view.</p>
 </div>
 <button class="btn exit" id="exit" type="button">Exit clean view</button>
 
