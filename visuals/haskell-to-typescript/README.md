@@ -3,9 +3,11 @@
 A self-contained, dependency-free HTML animation that morphs a deliberately
 obfuscated Haskell function into its TypeScript explanation — token by token.
 
-Built for a LinkedIn post and blog article about **readable vs. explainable**
-code: the idea that software no longer needs to be readable by a human reading
-it cold — it needs to be *explainable on demand*.
+Built for a LinkedIn post and blog article about **readable code as a stand-in
+for trust**: the Haskell-to-TypeScript translation is the hook, but the real
+argument is that forty years of computing assumed a human was reading, writing,
+or operating the system — and taking the human out reopens every one of those
+decisions. What replaces readability is verification.
 
 This is one visual in the [AI Visuals Hub](../..) — the repo that holds the
 rules, tools, skills, and templates for making more visuals like this one.
@@ -21,6 +23,8 @@ explanation, not a decoration on top of it.
 The bet: when a complex idea is hard to hold in your head, a few seconds of
 well-designed motion can compress a page of reasoning into something you
 instantly get. This repo is that bet, shipped.
+
+The final caption carries the thesis: **"Readable was a stand-in for trust."**
 
 ## How it was made
 
