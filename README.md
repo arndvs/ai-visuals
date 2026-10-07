@@ -18,7 +18,11 @@ ai-visuals/
 │       └── README.md     ← what it is, how it was made
 ├── rules/            ← Design rules and conventions for making visuals
 ├── tools/            ← Scripts and utilities used to build visuals
-├── skills/           ← Agent skills that encode the craft
+├── .claude/
+│   └── skills/       ← Agent skills that encode the craft (project-scoped —
+│                        discovered only when this repo is open, in both
+│                        Claude Code and VS Code Copilot via
+│                        chat.useCustomizationsInParentRepositories)
 ├── python/           ← Python helpers (rendering, post-processing)
 └── templates/        ← Reusable starting points for new visuals
 ```
