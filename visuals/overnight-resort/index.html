@@ -1,0 +1,506 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>The Overnight Re-sort</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: a fixed-size video frame (scaled to fit). Customers sit in six lifecycle columns; each night every one is re-scored, a few change columns, and only those few are sent to the CRM. */
+:root {
+  --bg: #f1f2f6;
+  --surface: #ffffff;
+  --fg: #1a1c26;
+  --muted: #646a80;
+  --line: #d9dce6;
+  --accent: #3d4fc4;
+  --accent-fg: #ffffff;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* frame (deliberately one dark look in both themes) */
+  --frame-fg: #eef0f8;
+  --c-new: #7cc4ff;
+  --c-active: #74d99f;
+  --c-vip: #f2c14e;
+  --c-risk: #f0914a;
+  --c-lapsed: #e46a7a;
+  --c-dormant: #8a86a8;
+  --scan: #b7c4ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11131b; --surface: #1a1d27; --fg: #e9ebf3; --muted: #979cb2;
+    --line: #2b2f3d; --accent: #9aa8ff; --accent-fg: #111426; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11131b; --surface: #1a1d27; --fg: #e9ebf3; --muted: #979cb2;
+  --line: #2b2f3d; --accent: #9aa8ff; --accent-fg: #111426; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--display); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 16px 20px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; height: 100svh; overflow: hidden; }
+.page-head h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.page-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 62ch; }
+
+.stage { position: relative; margin-inline: auto; overflow: hidden; border-radius: 16px; flex: 1 1 auto; min-height: 0; width: auto; max-width: 100%; aspect-ratio: var(--ar); box-shadow: 0 1px 0 var(--line), 0 18px 50px -24px rgba(16, 20, 40, .45); background: #0d1222; }
+
+/* ---------- the frame ---------- */
+.frame { position: absolute; top: 0; left: 0; transform-origin: 0 0; overflow: hidden; color: var(--frame-fg); font-family: var(--display); --k: 1; }
+.bg { position: absolute; inset: 0; transition: opacity calc(1300ms * var(--k)) ease; }
+.bg.a { background: radial-gradient(1100px 760px at 85% -10%, rgba(120, 150, 230, .38), transparent 62%), radial-gradient(900px 700px at -5% 110%, rgba(70, 110, 170, .25), transparent 60%), #111a30; }
+.bg.b { opacity: 0; background: radial-gradient(900px 620px at 85% -10%, rgba(90, 80, 190, .34), transparent 62%), radial-gradient(900px 700px at -5% 110%, rgba(40, 40, 110, .3), transparent 60%), #070915; }
+.frame[data-state="night"] .bg.b { opacity: 1; }
+.grain { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.2px); background-size: 30px 30px; mask-image: linear-gradient(to bottom, #000, transparent 85%); }
+.frame.instant *, .frame.instant { transition: none !important; }
+
+.frame-head { position: absolute; left: 72px; right: 72px; top: 64px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.chip { display: inline-flex; align-items: center; gap: 14px; padding: 12px 24px 12px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13); font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.chip .dot { width: 14px; height: 14px; border-radius: 50%; background: #ffd98a; box-shadow: 0 0 18px #ffd98a; transition: background calc(900ms * var(--k)), box-shadow calc(900ms * var(--k)); }
+.frame[data-state="night"] .chip .dot { background: var(--scan); box-shadow: 0 0 18px var(--scan); }
+.tag { font-family: var(--mono); font-size: 20px; color: rgba(238,240,248,.5); letter-spacing: .02em; text-align: right; }
+.night-n { font-variant-numeric: tabular-nums; }
+
+.swap { display: inline-grid; }
+.swap > * { grid-area: 1 / 1; transition: opacity calc(650ms * var(--k)) ease, transform calc(650ms * var(--k)) cubic-bezier(.3,0,.2,1), filter calc(650ms * var(--k)) ease; }
+.swap .b { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+.frame[data-state="night"] .swap:not(.swap2) .a, .frame[data-sent="true"] .swap2 .a { opacity: 0; transform: translateY(-12px); filter: blur(4px); }
+.frame[data-state="night"] .swap:not(.swap2) .b, .frame[data-sent="true"] .swap2 .b { opacity: 1; transform: none; filter: none; transition-delay: calc(450ms * var(--k)); }
+
+/* columns */
+.col { position: absolute; box-sizing: border-box; padding-right: 10px; }
+.col .name { font-size: 30px; font-weight: 700; letter-spacing: -0.015em; display: flex; align-items: center; gap: 10px; }
+.col .name i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex: none; }
+.col .rule { margin-top: 6px; font-family: var(--mono); font-size: 19px; line-height: 1.3; color: rgba(238,240,248,.55); }
+.col .n { margin-top: 8px; font-family: var(--mono); font-size: 22px; color: var(--c); font-variant-numeric: tabular-nums; }
+.lane { position: absolute; border-left: 1px solid rgba(255,255,255,.07); }
+
+.dot-c { position: absolute; left: 0; top: 0; width: var(--d, 22px); height: var(--d, 22px); margin: calc(var(--d, 22px) / -2) 0 0 calc(var(--d, 22px) / -2); border-radius: 50%; background: var(--c); opacity: .85; will-change: transform; }
+.dot-c.changed { opacity: 1; box-shadow: 0 0 0 5px rgba(255,255,255,.9), 0 0 26px var(--c); }
+.scanline { position: absolute; top: 0; width: 4px; border-radius: 2px; background: var(--scan); box-shadow: 0 0 30px 8px rgba(183,196,255,.35); opacity: 0; pointer-events: none; }
+
+/* CRM box */
+.crm { position: absolute; box-sizing: border-box; display: flex; gap: 28px; align-items: center; padding: 20px 26px; border-radius: 20px; background: rgba(255,255,255,.05); border: 1.5px solid rgba(255,255,255,.14); transition: border-color calc(500ms * var(--k)), background calc(500ms * var(--k)); }
+.crm.hot { border-color: rgba(183,196,255,.7); background: rgba(120,140,255,.1); }
+.crm .who { flex: none; }
+.crm .who .role { font-family: var(--mono); font-size: 18px; letter-spacing: .08em; text-transform: uppercase; color: rgba(238,240,248,.55); }
+.crm .who .title { margin-top: 6px; font-size: 32px; font-weight: 700; letter-spacing: -0.015em; }
+.crm .log { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 19px; color: rgba(238,240,248,.82); }
+.crm .log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crm .log b { font-weight: 500; }
+.crm .log .muted { color: rgba(238,240,248,.45); }
+
+.frame-foot { position: absolute; left: 72px; right: 72px; bottom: 64px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+.count .lbl { font-family: var(--mono); font-size: 19px; letter-spacing: .06em; text-transform: uppercase; color: rgba(238,240,248,.55); }
+.count .num { font-size: 104px; font-weight: 700; line-height: .95; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--scan); }
+.count .of { font-family: var(--mono); font-size: 20px; color: rgba(238,240,248,.55); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.big { font-size: 46px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-align: right; text-wrap: balance; max-width: 600px; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: center; }
+.group { display: flex; align-items: center; gap: 8px; }
+.group .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.seg button { border: 0; background: transparent; color: var(--fg); font: 500 13px/1 var(--display); padding: 8px 11px; border-radius: 7px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 14px/1 var(--display); padding: 11px 16px; border-radius: 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); min-width: 200px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+body.clean .chrome { display: none; }
+body.clean .wrap { padding-block: 16px; min-height: 100svh; justify-content: center; }
+body.clean .stage { flex: 1 1 auto; max-width: 100%; box-shadow: none; }
+.exit { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; opacity: 0; transition: opacity .2s; }
+body:not(.clean) .exit { display: none; }
+.exit:hover, .exit:focus-visible { opacity: 1; }
+</style>
+
+<div class="wrap">
+  <header class="page-head chrome">
+    <h1>The overnight re-sort</h1>
+    <p>Every night MCRDSE's segment engine re-scores every customer by recency, frequency and spend, and files them into a lifecycle stage. Most stay put. Only the ones who changed get their tags updated in the CRM.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="frame" id="frame" data-state="day">
+      <div class="bg a"></div>
+      <div class="bg b"></div>
+      <div class="grain"></div>
+      <div id="cols"></div>
+      <div id="dots"></div>
+      <div class="scanline" id="scan"></div>
+      <div class="crm" id="crm">
+        <div class="who"><div class="role">CRM</div><div class="title">GoHighLevel</div></div>
+        <div class="log" id="log"><div class="muted">waiting for tonight's run</div></div>
+      </div>
+      <div class="frame-head">
+        <div class="chip"><span class="dot"></span><span class="swap"><span class="a">Daytime</span><span class="b">Nightly run</span></span></div>
+        <div class="tag">rfm segment engine · night <span class="night-n" id="nightN">1</span></div>
+      </div>
+      <div class="frame-foot">
+        <div class="count"><div class="lbl">Sent to the CRM</div><div class="num" id="num">0</div><div class="of" id="of">of 64 re-scored</div></div>
+        <div class="big swap swap2"><span class="a">Every customer gets re-scored overnight.</span><span class="b">Only the changes get sent.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls chrome">
+    <button class="btn primary" id="play" type="button">Run tonight</button>
+    <button class="btn" id="restart" type="button">Restart</button>
+    <div class="group"><span class="lbl">Speed</span>
+      <div class="seg" id="speed">
+        <button type="button" data-v="0.6" aria-pressed="false">0.6×</button>
+        <button type="button" data-v="1" aria-pressed="true">1×</button>
+        <button type="button" data-v="1.5" aria-pressed="false">1.5×</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Format</span>
+      <div class="seg" id="format">
+        <button type="button" data-v="4:5" aria-pressed="true">4:5</button>
+        <button type="button" data-v="1:1" aria-pressed="false">1:1</button>
+        <button type="button" data-v="16:9" aria-pressed="false">16:9</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Loop</span>
+      <div class="seg" id="loop">
+        <button type="button" data-v="on" aria-pressed="true">On</button>
+        <button type="button" data-v="off" aria-pressed="false">Off</button>
+      </div>
+    </div>
+    <button class="btn" id="clean" type="button">Clean view</button>
+  </div>
+</div>
+<button class="btn exit" id="exit" type="button">Exit clean view</button>
+
+<script>
+/* ===== Visual data (stage rules from the MCRDSE segment engine) ===== */
+const STAGES = [
+  { id: "new",     name: "New",     rule: "1 order · ≤90 days",      tag: "lifecycle-new",     c: "--c-new",     start: 9 },
+  { id: "active",  name: "Active",  rule: "2+ orders · ≤90 days",    tag: "lifecycle-active",  c: "--c-active",  start: 12 },
+  { id: "vip",     name: "VIP",     rule: "3+ orders or $300+",      tag: "lifecycle-vip",     c: "--c-vip",     start: 6 },
+  { id: "risk",    name: "At-risk", rule: "≤180 days",               tag: "lifecycle-at-risk", c: "--c-risk",    start: 12 },
+  { id: "lapsed",  name: "Lapsed",  rule: "≤365 days",               tag: "lifecycle-lapsed",  c: "--c-lapsed",  start: 11 },
+  { id: "dormant", name: "Dormant", rule: "365+ days",               tag: "lifecycle-dormant", c: "--c-dormant", start: 14 }
+];
+/* what can happen to a customer between two nights */
+const MOVES = [
+  ["new", "active", 3], ["new", "risk", 3], ["active", "vip", 2], ["active", "risk", 3],
+  ["risk", "active", 2], ["risk", "lapsed", 3], ["vip", "lapsed", 1], ["lapsed", "dormant", 3],
+  ["lapsed", "active", 1], ["dormant", "active", 1]
+];
+const PER_NIGHT = 6;
+const MAX_DOTS = 72;
+
+/* ===== Setup ===== */
+const stage = document.getElementById("stage");
+const frame = document.getElementById("frame");
+const colsEl = document.getElementById("cols");
+const dotsEl = document.getElementById("dots");
+const scan = document.getElementById("scan");
+const crm = document.getElementById("crm");
+const logEl = document.getElementById("log");
+const numEl = document.getElementById("num");
+const ofEl = document.getElementById("of");
+const nightEl = document.getElementById("nightN");
+const playBtn = document.getElementById("play");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const FORMATS = { "4:5": [1080, 1350], "1:1": [1080, 1080], "16:9": [1920, 1080] };
+let format = "4:5", speed = 1, loopOn = true, state = "day", busy = false, running = [], timer = null, gen = 0, night = 1;
+
+/* seeded random so every loop tells the same kind of story */
+let seed = 7;
+const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+let dots = [];
+const colEls = {};
+function resetDots() {
+  dotsEl.innerHTML = ""; dots = []; seed = 7; night = 1;
+  for (const s of STAGES) for (let i = 0; i < s.start; i++) addDot(s.id);
+}
+function addDot(stageId) {
+  const el = document.createElement("div");
+  el.className = "dot-c";
+  dotsEl.appendChild(el);
+  const d = { el, stage: stageId, x: 0, y: 0 };
+  color(d);
+  dots.push(d);
+  return d;
+}
+function color(d) { d.el.style.setProperty("--c", `var(${STAGES.find(s => s.id === d.stage).c})`); }
+for (const s of STAGES) {
+  const c = document.createElement("div");
+  c.className = "col";
+  c.style.setProperty("--c", `var(${s.c})`);
+  c.innerHTML = `<div class="name"><i></i>${s.name}</div><div class="rule">${s.rule}</div><div class="n">0</div>`;
+  colsEl.appendChild(c);
+  const lane = document.createElement("div");
+  lane.className = "lane";
+  colsEl.appendChild(lane);
+  colEls[s.id] = { c, lane, n: c.querySelector(".n") };
+}
+
+/* ===== Layout ===== */
+function geo() {
+  const [W, H] = FORMATS[format];
+  const land = W > H, square = W === H;
+  const x = 72, w = W - 144, top = land ? 170 : 190;
+  const crmH = land ? 150 : 170;
+  const bottom = H - (land ? 250 : 270);
+  const colW = w / STAGES.length;
+  const headH = land ? 160 : 200;
+  const d = land ? 28 : 32, pitch = land ? 39 : 43;
+  const per = Math.max(3, Math.floor((colW - 14) / pitch));
+  return { W, H, x, w, top, bottom, crmH, colW, headH, d, pitch, per, land, square };
+}
+function layout(g) {
+  g = g || geo();
+  STAGES.forEach((s, i) => {
+    const { c, lane } = colEls[s.id];
+    c.style.left = g.x + i * g.colW + "px"; c.style.top = g.top + "px"; c.style.width = g.colW + "px";
+    lane.style.left = g.x + i * g.colW - 8 + "px"; lane.style.top = g.top + "px"; lane.style.height = (g.bottom - g.crmH - 24 - g.top) + "px";
+    lane.style.display = i ? "" : "none";
+  });
+  crm.style.left = g.x + "px"; crm.style.width = g.w + "px";
+  crm.style.top = g.bottom - g.crmH + "px"; crm.style.height = g.crmH + "px";
+  scan.style.top = g.top - 10 + "px"; scan.style.height = (g.bottom - g.crmH - 14 - g.top) + "px";
+  frame.style.setProperty("--d", g.d + "px");
+}
+function slots(g) {
+  g = g || geo();
+  const counts = {};
+  const pos = new Map();
+  STAGES.forEach((s, i) => {
+    const members = dots.filter(d => d.stage === s.id);
+    counts[s.id] = members.length;
+    members.forEach((d, j) => {
+      const col = j % g.per, row = Math.floor(j / g.per);
+      pos.set(d, [g.x + i * g.colW + g.d / 2 + 2 + col * g.pitch, g.top + g.headH + g.d / 2 + row * g.pitch]);
+    });
+  });
+  return { pos, counts };
+}
+function paintCounts(counts) { for (const s of STAGES) colEls[s.id].n.textContent = counts[s.id]; }
+function snap() {
+  const { pos, counts } = slots();
+  for (const d of dots) { const p = pos.get(d); d.x = p[0]; d.y = p[1]; d.el.style.transform = `translate(${d.x}px, ${d.y}px)`; }
+  paintCounts(counts);
+}
+
+/* ===== Sizing ===== */
+function scaleFrame() {
+  const [FW, FH] = FORMATS[format];
+  const s = Math.min(stage.clientWidth / FW, stage.clientHeight / FH);
+  frame.style.transform = `scale(${s})`;
+}
+function applyFormat() {
+  const [FW, FH] = FORMATS[format];
+  frame.style.width = FW + "px"; frame.style.height = FH + "px";
+  stage.style.setProperty("--ar", `${FW} / ${FH}`);
+  layout(); snap(); scaleFrame();
+}
+
+/* ===== Helpers ===== */
+function track(a) { running.push(a); return a.finished.catch(() => {}); }
+function wait(ms) { return track(frame.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms })); }
+function setLog(lines) { logEl.innerHTML = lines.join(""); }
+
+function pickMoves() {
+  const out = [];
+  let guard = 0;
+  while (out.length < PER_NIGHT && guard++ < 200) {
+    const total = MOVES.reduce((t, m) => t + m[2], 0);
+    let r = rand() * total, m = MOVES[0];
+    for (const mv of MOVES) { r -= mv[2]; if (r <= 0) { m = mv; break; } }
+    const pool = dots.filter(d => d.stage === m[0] && !out.some(o => o.d === d));
+    if (pool.length < 3) continue;
+    out.push({ d: pool[Math.floor(rand() * pool.length)], from: m[0], to: m[1] });
+  }
+  return out;
+}
+
+/* ===== The run ===== */
+async function runNight(g) {
+  busy = true; state = "running"; updateButtons();
+  const k = 1 / speed, G = geo();
+  frame.style.setProperty("--k", k);
+  dots.forEach(d => d.el.classList.remove("changed"));
+  crm.classList.remove("hot");
+  setLog([`<div class="muted">night ${night} · re-scoring…</div>`]);
+  numEl.textContent = "0";
+  frame.dataset.state = "night";
+  await wait(600 * k);
+
+  /* 1. re-score everyone: a scan sweeps the columns */
+  const total = dots.length;
+  ofEl.textContent = `of ${total} re-scored`;
+  if (!reduce) {
+    const x0 = G.x - 12, x1 = G.x + G.w + 4, dur = 1500 * k;
+    track(scan.animate([{ transform: `translateX(${x0}px)`, opacity: 0 }, { opacity: 1, offset: .08 }, { opacity: 1, offset: .92 }, { transform: `translateX(${x1}px)`, opacity: 0 }], { duration: dur, easing: "linear", fill: "both" }));
+    dots.forEach(d => {
+      const t = (d.x - x0) / (x1 - x0);
+      track(d.el.animate([{ filter: "brightness(1)" }, { filter: "brightness(1.9)", offset: .4 }, { filter: "brightness(1)" }], { duration: 420 * k, delay: t * dur }));
+    });
+    await wait(dur);
+  }
+  if (g !== gen) return;
+
+  /* 2. a few customers change stage, plus one first-time buyer */
+  const moves = pickMoves();
+  const arrivals = dots.length < MAX_DOTS ? 1 : 0;
+  const before = new Map(dots.map(d => [d, [d.x, d.y]]));
+  moves.forEach(m => { m.d.stage = m.to; color(m.d); });
+  const fresh = [];
+  for (let i = 0; i < arrivals; i++) fresh.push(addDot("new"));
+  const { pos, counts } = slots(G);
+  const anims = [];
+  for (const d of dots) {
+    const p = pos.get(d), b = before.get(d);
+    d.x = p[0]; d.y = p[1];
+    d.el.style.transform = `translate(${p[0]}px, ${p[1]}px)`;
+    if (reduce) continue;
+    const mv = moves.find(m => m.d === d);
+    if (fresh.includes(d)) {
+      anims.push(track(d.el.animate([{ transform: `translate(${p[0]}px, ${p[1] - 80}px) scale(0)`, opacity: 0 }, { transform: `translate(${p[0]}px, ${p[1]}px) scale(1)`, opacity: 1 }], { duration: 700 * k, delay: 500 * k, easing: "cubic-bezier(.2,1.4,.4,1)", fill: "backwards" })));
+    } else if (mv) {
+      const lift = -90 - Math.abs(p[0] - b[0]) * .12;
+      anims.push(track(d.el.animate([
+        { transform: `translate(${b[0]}px, ${b[1]}px) scale(1)` },
+        { transform: `translate(${(b[0] + p[0]) / 2}px, ${Math.min(b[1], p[1]) + lift}px) scale(1.5)`, offset: .5 },
+        { transform: `translate(${p[0]}px, ${p[1]}px) scale(1)` }
+      ], { duration: 1150 * k, delay: moves.indexOf(mv) * 140 * k, easing: "cubic-bezier(.5,0,.3,1)", fill: "backwards" })));
+    } else if (b[0] !== p[0] || b[1] !== p[1]) {
+      anims.push(track(d.el.animate([{ transform: `translate(${b[0]}px, ${b[1]}px)` }, { transform: `translate(${p[0]}px, ${p[1]}px)` }], { duration: 600 * k, delay: 900 * k, easing: "cubic-bezier(.4,0,.2,1)", fill: "backwards" })));
+    }
+  }
+  moves.forEach(m => m.d.el.classList.add("changed"));
+  fresh.forEach(d => d.el.classList.add("changed"));
+  await Promise.all(anims);
+  paintCounts(counts);
+  if (g !== gen) return;
+  await wait(300 * k);
+
+  /* 3. only the changed ones go to the CRM */
+  const changed = [...moves.map(m => ({ d: m.d, line: `<div><b>${STAGES.find(s => s.id === m.from).tag}</b> → <b>${STAGES.find(s => s.id === m.to).tag}</b></div>` })),
+                   ...fresh.map(d => ({ d, line: `<div><b>first order</b> → <b>lifecycle-new</b></div>` }))];
+  const crmBox = { x: parseFloat(crm.style.left), y: parseFloat(crm.style.top), w: parseFloat(crm.style.width), h: parseFloat(crm.style.height) };
+  const target = [crmBox.x + 120, crmBox.y + crmBox.h / 2];
+  const shown = [];
+  let sent = 0;
+  for (const c of changed) {
+    if (g !== gen) return;
+    if (!reduce) {
+      const ghost = document.createElement("div");
+      ghost.className = "dot-c changed";
+      ghost.style.setProperty("--c", c.d.el.style.getPropertyValue("--c"));
+      dotsEl.appendChild(ghost);
+      const a = ghost.animate([
+        { transform: `translate(${c.d.x}px, ${c.d.y}px) scale(1)`, opacity: 1 },
+        { transform: `translate(${target[0]}px, ${target[1]}px) scale(.4)`, opacity: .2 }
+      ], { duration: 650 * k, easing: "cubic-bezier(.5,0,.75,0)", fill: "both" });
+      track(a).then(() => ghost.remove());
+      await wait(220 * k);
+    }
+    sent++;
+    frame.dataset.sent = "true";
+    numEl.textContent = sent;
+    crm.classList.add("hot");
+    shown.unshift(c.line);
+    setLog([...shown.slice(0, G.land ? 3 : 3), shown.length > 3 ? `<div class="muted">+ ${shown.length - 3} more · ${sent} contacts updated</div>` : ""]);
+  }
+  await wait(500 * k);
+  setLog([...shown.slice(0, 2), `<div class="muted">${sent} contacts updated · ${total + fresh.length - sent} untouched</div>`]);
+  ofEl.textContent = `of ${total + fresh.length} re-scored`;
+  state = "done"; busy = false; updateButtons();
+}
+
+async function toDay(g) {
+  busy = true;
+  const k = 1 / speed;
+  frame.style.setProperty("--k", k);
+  frame.dataset.state = "day";
+  frame.dataset.sent = "false";
+  dots.forEach(d => d.el.classList.remove("changed"));
+  crm.classList.remove("hot");
+  night++;
+  nightEl.textContent = night;
+  setLog([`<div class="muted">waiting for tonight's run</div>`]);
+  numEl.textContent = "0";
+  ofEl.textContent = `of ${dots.length} re-scored`;
+  await wait(900 * k);
+  state = "day"; busy = false; updateButtons();
+}
+
+function setInstant() {
+  frame.classList.add("instant");
+  frame.dataset.state = "day";
+  frame.dataset.sent = "false";
+  state = "day";
+  resetDots();
+  layout(); snap();
+  nightEl.textContent = night;
+  numEl.textContent = "0";
+  ofEl.textContent = `of ${dots.length} re-scored`;
+  crm.classList.remove("hot");
+  setLog([`<div class="muted">waiting for tonight's run</div>`]);
+  void frame.offsetWidth;
+  frame.classList.remove("instant");
+  updateButtons();
+}
+function updateButtons() { playBtn.textContent = state === "done" ? "Next day" : "Run tonight"; }
+
+async function step() {
+  const g = gen;
+  if (state === "day") await runNight(g);
+  else if (state === "done") await toDay(g);
+}
+async function stopAll() {
+  clearTimeout(timer);
+  gen++;
+  running.forEach(a => { try { a.cancel(); } catch (e) {} });
+  running = [];
+  busy = false;
+  frame.getAnimations({ subtree: true }).forEach(a => a.cancel());
+}
+function schedule() {
+  clearTimeout(timer);
+  if (!loopOn) return;
+  timer = setTimeout(async () => {
+    if (night >= 6 && state === "done") { setInstant(); schedule(); return; }
+    await step(); schedule();
+  }, state === "day" ? 1300 : 3600);
+}
+
+/* ===== Controls ===== */
+playBtn.addEventListener("click", async () => {
+  if (busy) return;
+  await stopAll(); await step(); schedule();
+});
+document.getElementById("restart").addEventListener("click", async () => { await stopAll(); setInstant(); schedule(); });
+function segment(id, onPick) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    onPick(b.dataset.v);
+  });
+}
+segment("speed", v => { speed = parseFloat(v); });
+segment("format", async v => { await stopAll(); format = v; applyFormat(); setInstant(); schedule(); });
+segment("loop", v => { loopOn = v === "on"; if (loopOn && !busy) schedule(); else clearTimeout(timer); });
+document.getElementById("clean").addEventListener("click", () => { document.body.classList.add("clean"); requestAnimationFrame(scaleFrame); });
+document.getElementById("exit").addEventListener("click", () => { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); }
+  if (e.key === " " && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); playBtn.click(); }
+});
+new ResizeObserver(() => scaleFrame()).observe(stage);
+
+/* ===== Boot ===== */
+(async () => {
+  try { await Promise.all([document.fonts.load('700 26px "Bricolage Grotesque"'), document.fonts.load('20px "IBM Plex Mono"')]); } catch (e) {}
+  resetDots();
+  applyFormat();
+  setInstant();
+  timer = setTimeout(async () => { applyFormat(); await step(); schedule(); }, 1300);
+})();
+</script>
+
+</body></html>

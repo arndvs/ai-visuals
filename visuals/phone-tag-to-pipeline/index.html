@@ -1,0 +1,486 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Phone Tag to Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: a fixed-size video frame (scaled to fit). Six manual hand-offs between patient, front desk and biller collapse into one upload that routes itself. */
+:root {
+  --bg: #f3f2ee;
+  --surface: #ffffff;
+  --fg: #1c1d1a;
+  --muted: #66685f;
+  --line: #dddcd3;
+  --accent: #2f7a63;
+  --accent-fg: #ffffff;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* frame (deliberately one dark look in both themes) */
+  --frame-fg: #f4efe6;
+  --manual: #f0a35e;
+  --auto: #6fd8b0;
+  --block: #ef7b6f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121412; --surface: #1b1e1b; --fg: #ebede6; --muted: #9a9d92;
+    --line: #2c302b; --accent: #7fd1b0; --accent-fg: #0f1a15; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121412; --surface: #1b1e1b; --fg: #ebede6; --muted: #9a9d92;
+  --line: #2c302b; --accent: #7fd1b0; --accent-fg: #0f1a15; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--display); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 16px 20px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; height: 100svh; overflow: hidden; }
+.page-head h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.page-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 62ch; }
+
+.stage {
+  position: relative; margin-inline: auto; overflow: hidden; border-radius: 16px;
+  flex: 1 1 auto; min-height: 0; width: auto; max-width: 100%;
+  aspect-ratio: var(--ar);
+  box-shadow: 0 1px 0 var(--line), 0 18px 50px -24px rgba(20, 24, 16, .45);
+  background: #17110d;
+}
+
+/* ---------- the frame ---------- */
+.frame { position: absolute; top: 0; left: 0; transform-origin: 0 0; overflow: hidden; color: var(--frame-fg); font-family: var(--display); --k: 1; }
+.bg { position: absolute; inset: 0; transition: opacity calc(1400ms * var(--k)) ease; }
+.bg.a {
+  background:
+    radial-gradient(1000px 720px at 10% -8%, rgba(214, 120, 60, .42), transparent 62%),
+    radial-gradient(900px 700px at 108% 108%, rgba(170, 70, 60, .28), transparent 60%),
+    #17110d;
+}
+.bg.b {
+  opacity: 0;
+  background:
+    radial-gradient(1000px 720px at 90% -8%, rgba(40, 150, 115, .45), transparent 62%),
+    radial-gradient(900px 700px at -8% 108%, rgba(40, 110, 140, .26), transparent 60%),
+    #0b1714;
+}
+.frame[data-state="after"] .bg.b { opacity: 1; }
+.grain { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.2px); background-size: 30px 30px; mask-image: linear-gradient(to bottom, #000, transparent 85%); }
+.frame.instant *, .frame.instant { transition: none !important; }
+
+.frame-head { position: absolute; left: 72px; right: 72px; top: 64px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.chip { display: inline-flex; align-items: center; gap: 14px; padding: 12px 24px 12px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13); font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.chip .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--manual); box-shadow: 0 0 18px var(--manual); transition: background calc(900ms * var(--k)), box-shadow calc(900ms * var(--k)); }
+.frame[data-state="after"] .chip .dot { background: var(--auto); box-shadow: 0 0 18px var(--auto); }
+.tag { font-family: var(--mono); font-size: 20px; color: rgba(244,239,230,.5); letter-spacing: .02em; text-align: right; }
+
+.swap { display: inline-grid; }
+.swap > * { grid-area: 1 / 1; transition: opacity calc(650ms * var(--k)) ease, transform calc(650ms * var(--k)) cubic-bezier(.3,0,.2,1), filter calc(650ms * var(--k)) ease; }
+.swap .b { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+.frame[data-state="after"] .swap .a { opacity: 0; transform: translateY(-12px); filter: blur(4px); }
+.frame[data-state="after"] .swap .b { opacity: 1; transform: none; filter: none; transition-delay: calc(450ms * var(--k)); }
+
+/* graph */
+.edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.edges line { stroke-width: 3; stroke-linecap: round; fill: none; }
+.edges .manual { stroke: rgba(240,163,94,.42); stroke-dasharray: 3 14; }
+.edges .auto { stroke: rgba(111,216,176,.55); }
+.edges .alt { stroke: rgba(244,239,230,.18); stroke-dasharray: 3 12; }
+
+.node { position: absolute; left: 0; top: 0; width: var(--nw, 280px); transform: translate(-50%, -50%); box-sizing: border-box; padding: 18px 24px 20px; border-radius: 20px; background: rgba(20,16,12,.72); border: 1.5px solid rgba(255,255,255,.16); backdrop-filter: blur(6px); transition: border-color calc(500ms * var(--k)), background calc(500ms * var(--k)), box-shadow calc(500ms * var(--k)), opacity calc(500ms * var(--k)); }
+.node .role { display: grid; font-family: var(--mono); font-size: 19px; letter-spacing: .08em; text-transform: uppercase; color: rgba(244,239,230,.55); }
+.node .title { display: block; margin-top: 8px; font-size: 36px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.1; }
+.node .st { display: block; margin-top: 10px; font-family: var(--mono); font-size: 20px; color: var(--auto); opacity: 0; transform: translateY(6px); transition: opacity calc(400ms * var(--k)), transform calc(400ms * var(--k)); min-height: 1.3em; }
+.node.actor { border-color: rgba(240,163,94,.5); }
+.node.busy { border-color: var(--manual); box-shadow: 0 0 0 6px rgba(240,163,94,.12), 0 0 40px rgba(240,163,94,.25); }
+.frame[data-state="after"] .node { background: rgba(10,22,19,.72); border-color: rgba(111,216,176,.22); }
+.frame[data-state="after"] .node.dim { opacity: .5; }
+.node.lit { border-color: var(--auto) !important; box-shadow: 0 0 0 6px rgba(111,216,176,.12), 0 0 40px rgba(111,216,176,.25); opacity: 1 !important; }
+.node.lit .st { opacity: 1; transform: none; }
+.node.gone { opacity: 0; pointer-events: none; }
+.node.blocked .title { color: var(--block); }
+.frame[data-state="after"] .node.route { width: var(--rw, 290px); }
+
+.fly { position: absolute; left: 0; top: 0; padding: 12px 20px; border-radius: 14px; font-family: var(--mono); font-size: 26px; font-weight: 500; white-space: nowrap; pointer-events: none; will-change: transform; color: #1d140c; background: var(--manual); box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); }
+.fly.auto { background: var(--auto); color: #08201a; }
+
+.frame-foot { position: absolute; left: 72px; right: 72px; bottom: 64px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+.count .lbl { font-family: var(--mono); font-size: 19px; letter-spacing: .06em; text-transform: uppercase; color: rgba(244,239,230,.55); }
+.count .num { font-size: 104px; font-weight: 700; line-height: .95; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--manual); transition: color calc(600ms * var(--k)); }
+.frame[data-zero="true"] .count .num { color: var(--auto); }
+.big { font-size: 46px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-align: right; text-wrap: balance; max-width: 600px; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: center; }
+.group { display: flex; align-items: center; gap: 8px; }
+.group .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.seg button { border: 0; background: transparent; color: var(--fg); font: 500 13px/1 var(--display); padding: 8px 11px; border-radius: 7px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 14px/1 var(--display); padding: 11px 16px; border-radius: 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); min-width: 200px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+body.clean .chrome { display: none; }
+body.clean .wrap { padding-block: 16px; min-height: 100svh; justify-content: center; }
+body.clean .stage { flex: 1 1 auto; max-width: 100%; box-shadow: none; }
+.exit { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; opacity: 0; transition: opacity .2s; }
+body:not(.clean) .exit { display: none; }
+.exit:hover, .exit:focus-visible { opacity: 1; }
+</style>
+
+<div class="wrap">
+  <header class="page-head chrome">
+    <h1>Phone tag to pipeline</h1>
+    <p>Checking a new patient's insurance used to take six hand-offs between the patient, the front desk and the biller. At AlignSD it became one upload: a spam filter, an AI read of the card, and automatic routing.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="frame" id="frame" data-state="before" data-zero="false">
+      <div class="bg a"></div>
+      <div class="bg b"></div>
+      <div class="grain"></div>
+      <svg class="edges" id="edges" aria-hidden="true"></svg>
+      <div id="nodes"></div>
+      <div class="frame-head">
+        <div class="chip"><span class="dot"></span><span class="swap"><span class="a">The old way</span><span class="b">The pipeline</span></span></div>
+        <div class="tag">insurance check · new patient</div>
+      </div>
+      <div class="frame-foot">
+        <div class="count"><div class="lbl">Manual hand-offs</div><div class="num" id="num">0</div></div>
+        <div class="big swap"><span class="a">"Can you check my insurance?"</span><span class="b">One upload. The routing is automatic.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls chrome">
+    <button class="btn primary" id="play" type="button">Play the old way</button>
+    <button class="btn" id="restart" type="button">Restart</button>
+    <div class="group"><span class="lbl">Speed</span>
+      <div class="seg" id="speed">
+        <button type="button" data-v="0.6" aria-pressed="false">0.6×</button>
+        <button type="button" data-v="1" aria-pressed="true">1×</button>
+        <button type="button" data-v="1.5" aria-pressed="false">1.5×</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Format</span>
+      <div class="seg" id="format">
+        <button type="button" data-v="4:5" aria-pressed="true">4:5</button>
+        <button type="button" data-v="1:1" aria-pressed="false">1:1</button>
+        <button type="button" data-v="16:9" aria-pressed="false">16:9</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Loop</span>
+      <div class="seg" id="loop">
+        <button type="button" data-v="on" aria-pressed="true">On</button>
+        <button type="button" data-v="off" aria-pressed="false">Off</button>
+      </div>
+    </div>
+    <button class="btn" id="clean" type="button">Clean view</button>
+  </div>
+</div>
+<button class="btn exit" id="exit" type="button">Exit clean view</button>
+
+<script>
+/* ===== Visual data ===== */
+const NODES = [
+  { id: "patient", cls: "actor", role: ["Patient", "Patient"], title: "New patient" },
+  { id: "desk",    cls: "actor route", role: ["Staff", "Needs review"], title: "Front desk" },
+  { id: "biller",  cls: "actor route", role: ["Staff", "Auto-approved"], title: "Biller" },
+  { id: "upload",  cls: "step",  role: ["", "Step 1"], title: "Upload card + license", st: "received" },
+  { id: "spam",    cls: "step",  role: ["", "Step 2"], title: "7-layer spam filter", st: "7 of 7 passed" },
+  { id: "ai",      cls: "step",  role: ["", "Step 3"], title: "AI reads the card", st: "card + ID matched" },
+  { id: "blocked", cls: "step blocked route", role: ["", "Spam"], title: "Blocked" }
+];
+/* positions inside the content area, 0..1; [x, y] */
+const POS = {
+  portrait: {
+    before: { patient: [.2, .5], desk: [.76, .16], biller: [.76, .84] },
+    after:  { patient: [.5, .04], upload: [.5, .25], spam: [.5, .46], ai: [.5, .67], desk: [.155, .95], biller: [.5, .95], blocked: [.845, .95] }
+  },
+  square: {
+    before: { patient: [.2, .5], desk: [.76, .14], biller: [.76, .86] },
+    after:  { patient: [.155, .1], upload: [.5, .1], spam: [.845, .1], ai: [.5, .5], desk: [.155, .9], biller: [.5, .9], blocked: [.845, .9] }
+  },
+  landscape: {
+    before: { patient: [.2, .5], desk: [.7, .14], biller: [.7, .86] },
+    after:  { patient: [.07, .5], upload: [.28, .5], spam: [.48, .5], ai: [.68, .5], desk: [.91, .12], biller: [.91, .5], blocked: [.91, .88] }
+  }
+};
+const EDGES = {
+  before: [["patient", "desk", "manual"], ["desk", "biller", "manual"]],
+  after:  [["patient", "upload", "auto"], ["upload", "spam", "auto"], ["spam", "ai", "auto"], ["ai", "biller", "auto"], ["ai", "desk", "alt"], ["ai", "blocked", "alt"]]
+};
+const HANDOFFS = [
+  ["patient", "desk", "Call · goes to voicemail"],
+  ["desk", "patient", "Email: send us your card"],
+  ["patient", "desk", "Photos: license + card"],
+  ["desk", "biller", "Fwd: can you verify?"],
+  ["biller", "desk", "Verified"],
+  ["desk", "patient", "Email: you're covered"]
+];
+const PACKET = [["patient", "upload"], ["upload", "spam"], ["spam", "ai"], ["ai", "biller"]];
+
+/* ===== Setup ===== */
+const stage = document.getElementById("stage");
+const frame = document.getElementById("frame");
+const nodesEl = document.getElementById("nodes");
+const edgesEl = document.getElementById("edges");
+const numEl = document.getElementById("num");
+const playBtn = document.getElementById("play");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const FORMATS = { "4:5": [1080, 1350], "1:1": [1080, 1080], "16:9": [1920, 1080] };
+let format = "4:5", speed = 1, loopOn = true, state = "idle", busy = false, running = [], timer = null, gen = 0;
+
+const els = {};
+for (const n of NODES) {
+  const d = document.createElement("div");
+  d.className = "node " + n.cls;
+  d.innerHTML = `<span class="role swap"><span class="a">${n.role[0]}</span><span class="b">${n.role[1]}</span></span><span class="title">${n.title}</span><span class="st">${n.st || ""}</span>`;
+  nodesEl.appendChild(d);
+  els[n.id] = d;
+}
+const statusEl = id => els[id].querySelector(".st");
+
+function area() {
+  const [W, H] = FORMATS[format];
+  const land = W > H;
+  return { x: 72, y: land ? 175 : 205, w: W - 144, h: H - (land ? 175 + 250 : 205 + 270), land, kind: land ? "landscape" : W === H ? "square" : "portrait" };
+}
+function pt(id, which) {
+  const a = area(), p = POS[a.kind][which][id];
+  return p ? [a.x + p[0] * a.w, a.y + p[1] * a.h] : null;
+}
+function place(id, which) {
+  const p = pt(id, which), el = els[id];
+  if (!p) { el.classList.add("gone"); return; }
+  el.classList.remove("gone");
+  el.style.left = p[0] + "px"; el.style.top = p[1] + "px";
+}
+function drawEdges(which, animate) {
+  edgesEl.innerHTML = "";
+  const [W, H] = FORMATS[format];
+  edgesEl.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const lines = [];
+  for (const [a, b, kind] of EDGES[which]) {
+    const p = pt(a, which), q = pt(b, which);
+    const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    l.setAttribute("x1", p[0]); l.setAttribute("y1", p[1]); l.setAttribute("x2", q[0]); l.setAttribute("y2", q[1]);
+    l.setAttribute("class", kind);
+    edgesEl.appendChild(l);
+    lines.push(l);
+  }
+  return lines;
+}
+function setWidths() {
+  const a = area();
+  frame.style.setProperty("--nw", a.kind === "portrait" ? "340px" : a.kind === "square" ? "290px" : "300px");
+  frame.style.setProperty("--rw", a.land ? "300px" : "290px");
+}
+
+/* ===== Sizing ===== */
+function scaleFrame() {
+  const [FW, FH] = FORMATS[format];
+  const s = Math.min(stage.clientWidth / FW, stage.clientHeight / FH);
+  frame.style.transform = `scale(${s})`;
+}
+function applyFormat() {
+  const [FW, FH] = FORMATS[format];
+  frame.style.width = FW + "px"; frame.style.height = FH + "px";
+  stage.style.setProperty("--ar", `${FW} / ${FH}`);
+  setWidths();
+  scaleFrame();
+}
+
+/* ===== Helpers ===== */
+const tick = ms => new Promise(r => setTimeout(r, ms));
+function track(a) { running.push(a); return a.finished.catch(() => {}); }
+function wait(ms) { return track(frame.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms })); }
+function setCount(n) { numEl.textContent = n; frame.dataset.zero = n === 0 && state !== "idle" ? "true" : "false"; }
+function bump(n) {
+  setCount(n);
+  if (!reduce) track(numEl.animate([{ transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 380, easing: "cubic-bezier(.3,1.5,.5,1)" }));
+}
+function flight(from, to, text, cls, k) {
+  const p = [parseFloat(els[from].style.left), parseFloat(els[from].style.top)];
+  const q = [parseFloat(els[to].style.left), parseFloat(els[to].style.top)];
+  const f = document.createElement("div");
+  f.className = "fly " + (cls || "");
+  f.textContent = text;
+  frame.appendChild(f);
+  const w = f.offsetWidth, h = f.offsetHeight;
+  const dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy) || 1;
+  const bend = cls === "auto" ? 0 : 70;
+  const mx = (p[0] + q[0]) / 2 - (dy / len) * bend, my = (p[1] + q[1]) / 2 + (dx / len) * bend;
+  const T = (x, y, s) => `translate(${x - w / 2}px, ${y - h / 2}px) scale(${s})`;
+  const a = f.animate([
+    { transform: T(p[0], p[1], .6), opacity: 0 },
+    { transform: T(p[0] + (mx - p[0]) * .25, p[1] + (my - p[1]) * .25, 1), opacity: 1, offset: .15 },
+    { transform: T(mx, my, 1), opacity: 1, offset: .5 },
+    { transform: T(q[0], q[1], .9), opacity: 1, offset: .88 },
+    { transform: T(q[0], q[1], .6), opacity: 0 }
+  ], { duration: 1150 * k, easing: "cubic-bezier(.45,0,.35,1)", fill: "both" });
+  const done = track(a);
+  done.then(() => f.remove());
+  return done;
+}
+
+/* ===== States ===== */
+function setInstant(which) {
+  frame.classList.add("instant");
+  frame.querySelectorAll(".fly").forEach(f => f.remove());
+  const layout = which === "after" ? "after" : "before";
+  for (const n of NODES) { place(n.id, layout); els[n.id].classList.remove("lit", "busy", "dim"); }
+  drawEdges(layout);
+  frame.dataset.state = layout;
+  state = which;
+  setCount(which === "idle" ? 0 : which === "done" ? HANDOFFS.length : 0);
+  statusEl("patient").textContent = which === "after" ? "confirmed" : "";
+  if (which === "after") {
+    ["upload", "spam", "ai", "biller", "patient"].forEach(id => els[id].classList.add("lit"));
+    statusEl("biller").textContent = "auto-approved";
+    ["desk", "blocked"].forEach(id => els[id].classList.add("dim"));
+  }
+  void frame.offsetWidth;
+  frame.classList.remove("instant");
+  updateButtons();
+}
+function updateButtons() {
+  playBtn.textContent = state === "idle" ? "Play the old way" : state === "done" ? "Show the pipeline" : "Back to the old way";
+}
+
+async function playOld(g) {
+  busy = true; state = "playing";
+  const k = 1 / speed;
+  frame.style.setProperty("--k", k);
+  let n = 0;
+  for (const [a, b, text] of HANDOFFS) {
+    if (g !== gen) return;
+    els[a].classList.add("busy");
+    if (reduce) await wait(260 * k); else await flight(a, b, text, "", k);
+    els[a].classList.remove("busy");
+    bump(++n);
+    await wait(170 * k);
+  }
+  state = "done"; busy = false; updateButtons();
+}
+
+async function playPipeline(g) {
+  busy = true; state = "playing";
+  const k = 1 / speed;
+  frame.style.setProperty("--k", k);
+  NODES.forEach(n => els[n.id].classList.remove("busy", "lit", "dim"));
+  statusEl("biller").textContent = "";
+  /* old lines out */
+  const oldLines = [...edgesEl.children];
+  await Promise.all(oldLines.map(l => track(l.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 * k, fill: "both" }))));
+  frame.dataset.state = "after";
+  /* move actors, bring in steps */
+  const moves = [];
+  for (const n of NODES) {
+    const from = pt(n.id, "before"), to = pt(n.id, "after"), el = els[n.id];
+    if (from && to) {
+      el.style.left = to[0] + "px"; el.style.top = to[1] + "px";
+      if (!reduce) moves.push(track(el.animate([{ left: from[0] + "px", top: from[1] + "px" }, { left: to[0] + "px", top: to[1] + "px" }], { duration: 950 * k, easing: "cubic-bezier(.65,0,.25,1)" })));
+    } else if (to) {
+      place(n.id, "after");
+      moves.push(track(el.animate([{ opacity: 0, transform: "translate(-50%,-50%) scale(.85)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], { duration: 500 * k, delay: (400 + NODES.indexOf(n) * 70) * k, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" })));
+    }
+  }
+  await Promise.all(moves);
+  if (g !== gen) return;
+  const lines = drawEdges("after");
+  await Promise.all(lines.map((l, i) => {
+    const len = Math.hypot(l.x2.baseVal.value - l.x1.baseVal.value, l.y2.baseVal.value - l.y1.baseVal.value);
+    return track(l.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 380 * k, delay: i * 60 * k, fill: "both" }));
+  }));
+  ["desk", "blocked"].forEach(id => els[id].classList.add("dim"));
+  await wait(250 * k);
+  /* the packet */
+  for (const [a, b] of PACKET) {
+    if (g !== gen) return;
+    if (reduce) await wait(220 * k); else await flight(a, b, "card + license", "auto", k * .8);
+    if (b === "biller") statusEl("biller").textContent = "auto-approved";
+    els[b].classList.add("lit");
+    await wait(160 * k);
+  }
+  if (g !== gen) return;
+  if (!reduce) await flight("ai", "patient", "Email: we've got it", "auto", k * .9);
+  els.patient.classList.add("lit");
+  statusEl("patient").textContent = "confirmed";
+  setCount(0); state = "after"; setCount(0);
+  if (!reduce) track(numEl.animate([{ transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 420, easing: "cubic-bezier(.3,1.5,.5,1)" }));
+  busy = false; updateButtons();
+}
+
+async function backToStart(g) {
+  busy = true;
+  const k = 1 / speed;
+  await track(frame.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380 * k, fill: "both" }));
+  running.forEach(a => a.cancel()); running = [];
+  statusEl("patient").textContent = "";
+  setInstant("idle");
+  await track(frame.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 380 * k, fill: "both" }));
+  running = [];
+  busy = false;
+}
+
+async function step() {
+  const g = gen;
+  if (state === "idle") await playOld(g);
+  else if (state === "done") await playPipeline(g);
+  else if (state === "after") await backToStart(g);
+}
+async function stopAll() {
+  clearTimeout(timer);
+  gen++;
+  running.forEach(a => { try { a.cancel(); } catch (e) {} });
+  running = [];
+  busy = false;
+  frame.querySelectorAll(".fly").forEach(f => f.remove());
+  frame.getAnimations({ subtree: true }).forEach(a => a.cancel());
+}
+function schedule() {
+  clearTimeout(timer);
+  if (!loopOn) return;
+  timer = setTimeout(async () => { await step(); schedule(); }, state === "idle" ? 900 : state === "done" ? 1500 : 3600);
+}
+
+/* ===== Controls ===== */
+playBtn.addEventListener("click", async () => {
+  const s = state === "playing" ? "idle" : state;
+  await stopAll();
+  setInstant(s === "playing" ? "idle" : s);
+  await step(); schedule();
+});
+document.getElementById("restart").addEventListener("click", async () => {
+  await stopAll(); setInstant("idle"); schedule();
+});
+function segment(id, onPick) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    onPick(b.dataset.v);
+  });
+}
+segment("speed", v => { speed = parseFloat(v); });
+segment("format", async v => {
+  await stopAll(); format = v; applyFormat(); setInstant("idle"); schedule();
+});
+segment("loop", v => { loopOn = v === "on"; if (loopOn && !busy) schedule(); else clearTimeout(timer); });
+document.getElementById("clean").addEventListener("click", () => { document.body.classList.add("clean"); requestAnimationFrame(scaleFrame); });
+document.getElementById("exit").addEventListener("click", () => { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); }
+  if (e.key === " " && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); playBtn.click(); }
+});
+new ResizeObserver(() => scaleFrame()).observe(stage);
+
+/* ===== Boot ===== */
+(async () => {
+  try { await Promise.all([document.fonts.load('700 26px "Bricolage Grotesque"'), document.fonts.load('20px "IBM Plex Mono"')]); } catch (e) {}
+  applyFormat();
+  setInstant("idle");
+  timer = setTimeout(async () => { applyFormat(); await step(); schedule(); }, 1200);
+})();
+</script>
+
+</body></html>
