@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""generate_cards.py — share cards and blog heroes for arndvs.com, in the site's own style.
+"""generate_cards.py — share cards, blog heroes and the LinkedIn banner, in the site's own style.
 
 Share cards are 1200x630 link previews: one default card and one per project page.
 Blog heroes are 2400x1350 title cards for posts that have no image of their own.
@@ -73,7 +73,7 @@ SHARE_CARDS = {
     "ripemetrics": (
         "Marketing automation · AI platform · 2017–2025",
         "RipeMetrics",
-        "The customer growth platform I founded and built on for 8 years.",
+        "The customer growth platform I co-founded and built on for 8 years.",
         ["21 journey triggers", "38 segmentation scopes", "RAG across 4 channels"],
     ),
     "align-san-diego-family-chiropractic": (
@@ -135,6 +135,49 @@ def share_card(eyebrow, title, sub, tags):
     d.text((x, 562), "·  Applied AI Full-Stack Engineer", font=text(24), fill=GRAY)
     uf = text(24, 500)
     d.text((W - 80 - d.textlength("arndvs.com", font=uf), 562), "arndvs.com", font=uf, fill=ACCENT)
+    return im
+
+
+# ---------------------------------------------------------------- LinkedIn banner
+
+
+def linkedin_banner():
+    """1584x396 profile banner. The profile photo covers the lower left, so text starts at x=470."""
+    W, H = 1584, 396
+    im = Image.new("RGB", (W, H), BG)
+    glow = Image.new("RGB", (W, H), BG)
+    ImageDraw.Draw(glow).ellipse((900, -300, 1800, 520), fill=GLOW)
+    im = Image.blend(im, glow.filter(ImageFilter.GaussianBlur(150)), 0.95)
+    d = ImageDraw.Draw(im)
+    x = 470
+    d.rectangle((x, 66, x + 48, 72), fill=ACCENT)
+    spaced(d, (x, 92), "APPLIED AI FULL-STACK ENGINEER", text(20, 500), ACCENT, 3.2)
+    tf = display(56)
+    d.text((x - 3, 132), "AI systems that", font=tf, fill=WHITE)
+    w = d.textlength("AI systems that ", font=tf)
+    gradient_text(im, (x - 3 + w, 132), "hold up in production", tf, ACCENT, ACCENT_END)
+    d = ImageDraw.Draw(im)
+    d.text(
+        (x, 222),
+        "Agents, RAG and lifecycle marketing infrastructure, built with the people who use them.",
+        font=text(24),
+        fill=GRAY,
+    )
+    chips(
+        d,
+        x,
+        290,
+        ["Agents and RAG", "Marketing automation", "Braze and Snowflake certified"],
+        text(20, 500),
+        20,
+        44,
+        12,
+        CHIP,
+        DIM,
+        WHITE,
+    )
+    uf = text(22, 500)
+    d.text((W - 72 - d.textlength("arndvs.com", font=uf), 300), "arndvs.com", font=uf, fill=ACCENT)
     return im
 
 
@@ -354,6 +397,8 @@ def main() -> int:
         path = args.out / "blog-heroes" / f"{slug}.jpg"
         save_jpeg(build(), path, quality=92)
         copies.append((path, f"scripts/assets/blog-heroes/{slug}.jpg"))
+
+    save_jpeg(linkedin_banner(), args.out / "linkedin" / "banner.jpg", quality=92)
 
     if args.site:
         for src, rel in copies:

@@ -57,6 +57,7 @@ Taken from the dark theme in the site's `src/app/globals.css`.
 | Share card (link preview) | 1200×630 | JPEG, quality 90 |
 | Blog hero | 2400×1350 (16:9) | JPEG, quality 92 |
 | Screenshot and placeholder | 1518×759 (2:1) | JPEG, quality 90 |
+| LinkedIn banner | 1584×396 | JPEG, quality 92 |
 
 ## Share cards
 
@@ -68,6 +69,15 @@ Taken from the dark theme in the site's `src/app/globals.css`.
 - The three chips are numbers or named features that appear in the site's facts ledger
   (`docs/reference/facts-ledger.md` in the site repo). Do not put a number on a card
   that is not in the ledger.
+
+## LinkedIn banner
+
+- Same palette, fonts, and headline as the site's homepage, so the profile and the site read
+  as one identity.
+- The profile photo covers the lower left of the banner, so all text starts at x=470 or
+  further right.
+- Written to `visuals/arndvs-site-images/linkedin/banner.jpg`. It is uploaded to LinkedIn
+  by hand and is not copied into the site repo.
 
 ## Blog heroes
 
