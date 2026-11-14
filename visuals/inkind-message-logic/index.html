@@ -197,6 +197,12 @@ function setFormat(f) {
 }
 if (q.get("embed") === "1") document.body.classList.add("embed");
 if (q.get("format")) setFormat(q.get("format"));
+else {
+  /* No format given: follow the shape of the window, so an iframe that is tall on phones gets the 4:5 layout. */
+  const auto = () => setFormat(window.innerWidth / window.innerHeight < 1 ? "4x5" : "16x9");
+  auto();
+  window.addEventListener("resize", auto);
+}
 document.querySelectorAll("button[data-format]").forEach((b) => b.addEventListener("click", () => setFormat(b.dataset.format)));
 document.getElementById("replay").addEventListener("click", play);
 const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
