@@ -23,3 +23,21 @@ python python/make_thumbnail.py visuals/haskell-to-typescript/index.html --out t
 ```
 
 Requires: `pip install playwright` + `playwright install chromium`.
+
+## site_images/
+
+Generators for the static images on arndvs.com: share cards, blog heroes, and wireframe
+placeholders, plus a screenshot cropper. The style rules are in
+[`rules/site-images.md`](../rules/site-images.md), and the color and font tokens are in
+`site_images/style.py`.
+
+```bash
+python python/site_images/generate_cards.py --site ../arndvs
+python python/site_images/generate_placeholders.py --site ../arndvs
+python python/site_images/crop_screenshot.py capture.jpg out.jpg
+```
+
+Output goes to `visuals/arndvs-site-images/`. With `--site`, each image is also copied
+to its place in a checkout of the site repo.
+
+Requires: `pip install pillow`. The fonts are bundled in `site_images/fonts`.
