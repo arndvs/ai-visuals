@@ -17,6 +17,8 @@ ai-visuals/
 │       ├── index.html    ← the animation (self-contained, zero deps)
 │       └── README.md     ← what it is, how it was made
 ├── rules/            ← Design rules and conventions for making visuals
+│   ├── visual-design.md  ← motion visuals
+│   └── site-images.md    ← static images for arndvs.com
 ├── tools/            ← Scripts and utilities used to build visuals
 ├── .claude/
 │   └── skills/       ← Agent skills that encode the craft (project-scoped —
@@ -24,6 +26,7 @@ ai-visuals/
 │                        Claude Code and VS Code Copilot via
 │                        chat.useCustomizationsInParentRepositories)
 ├── python/           ← Python helpers (rendering, post-processing)
+│   └── site_images/  ← generators for arndvs.com share cards and blog heroes
 └── templates/        ← Reusable starting points for new visuals
 ```
 
