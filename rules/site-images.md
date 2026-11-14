@@ -115,3 +115,17 @@ Without `--site`, the images are written to `visuals/arndvs-site-images/` only. 
 each image is also copied to its place in a checkout of the site repo. Blog heroes land
 in `scripts/assets/blog-heroes/` there and go live when `pnpm seed:post-heroes` uploads
 them to Sanity.
+
+## Animated visuals for the site
+
+Animated visuals follow `rules/visual-design.md` and these additions.
+
+- **Start from `templates/site-visual.html`** (`./tools/new-visual.sh <name> --site`). It carries the site palette, the fonts, the motion tokens and the step timeline.
+- **Motion tokens:** `--fast` 180ms, `--base` 420ms, `--slow` 760ms, one easing (`--ease`). Don't add other durations or easings.
+- **Length:** a loop of 12 seconds or less. Hold the payoff for at least 2.5 seconds.
+- **Step 0 is the thumbnail.** Every element is on screen in its idle state. Steps change state; they don't reveal the layout.
+- **Reduced motion** shows the payoff step (`STILL`) with no transitions.
+- **Colour:** site teal by default. A case study's visual uses that project's accent. A visual for a post about another brand uses that brand's sample palette and nothing from the site but the fonts.
+- **Captions state what is on screen.** No claim in a caption that isn't on the page it supports.
+- **Ship three stills** with each visual: `thumbnail.jpg`, `still-16x9.jpg`, `still-4x5.jpg`.
+- **Inline the fonts** before publishing (`tools/inline-fonts.py`), then copy to the site (`tools/publish-to-site.sh`).

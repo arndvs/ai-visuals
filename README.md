@@ -37,7 +37,7 @@ ai-visuals/
 3. **Document it** — every visual gets a `README.md` in its folder: what it
    shows, how it was made, what toolchain it used.
 4. **Ship it** — the visual is served from GitHub Pages at
-   `https://arndvs.github.io/ai-visuals/<visual-name>/`.
+   `https://arndvs.github.io/ai-visuals/visuals/<visual-name>/`.
 
 ## The toolchain
 

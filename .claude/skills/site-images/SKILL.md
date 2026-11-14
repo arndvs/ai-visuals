@@ -45,3 +45,7 @@ python python/site_images/generate_cards.py --site ../arndvs
 python python/site_images/generate_placeholders.py --site ../arndvs
 python python/site_images/crop_screenshot.py capture.jpg out.jpg
 ```
+
+## Animated visuals
+
+This skill covers static images. For an animated visual for the site, read the "Animated visuals for the site" section of `rules/site-images.md`, start from `templates/site-visual.html`, and see `visuals/ctrlshft-migration-guard/` for a finished example.

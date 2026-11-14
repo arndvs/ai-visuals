@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site visual template</title>
+<meta name="description" content="Template for an arndvs.com visual.">
+<style>
+/*@fonts — replaced with inlined base64 by tools/inline-fonts.py */
+@font-face { font-family: "Outfit"; font-weight: 800; src: url("../../python/site_images/fonts/Outfit-ExtraBold.woff") format("woff"); font-display: swap; }
+@font-face { font-family: "DM Sans"; font-weight: 500; src: url("../../python/site_images/fonts/DMSans-500.woff") format("woff"); font-display: swap; }
+@font-face { font-family: "DM Sans"; font-weight: 700; src: url("../../python/site_images/fonts/DMSans-700.woff") format("woff"); font-display: swap; }
+/*@end-fonts*/
+
+/* ── Tokens. Site palette by default; a visual about another brand overrides
+      the colour tokens only (see rules/site-images.md). ───────────────────── */
+:root {
+  --bg: #0a0a0a;
+  --panel: #121212;
+  --panel-2: #1a1a1a;
+  --line: #2a2a2a;
+  --fg: #f5f5f5;
+  --muted: #9b9b9b;
+  --accent: #2dccae;
+  --accent-2: #b2f5e2;
+  --on-accent: #04110e;
+  --ok: #2dccae;
+  --bad: #f2695c;
+  --display: "Outfit", system-ui, sans-serif;
+  --text: "DM Sans", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Motion tokens */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fast: 180ms;
+  --base: 420ms;
+  --slow: 760ms;
+
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--text); font-weight: 500; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 14px; }
+body.embed { padding: 0; }
+.stage { width: 100%; display: grid; place-items: center; flex: 1; min-height: 0; container-type: size; }
+.frame { --u: 1cqw; width: min(100cqw, 100cqh * 16 / 9); aspect-ratio: 16 / 9; background: var(--bg); position: relative; overflow: hidden; container-type: size; }
+.frame[data-format="4x5"] { width: min(100cqw, 100cqh * 4 / 5); aspect-ratio: 4 / 5; }
+.frame[data-format="1x1"] { width: min(100cqw, 100cqh); aspect-ratio: 1; }
+.inner { position: absolute; inset: 0; display: grid; grid-template-columns: 38fr 62fr; gap: 4cqw; padding: 5.2cqw 5.2cqw 4.6cqw; align-items: center; font-size: 1.5cqw; }
+.frame[data-format="4x5"] .inner, .frame[data-format="1x1"] .inner { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 3cqw; padding: 6.5cqw; font-size: 2.55cqw; align-items: start; }
+.frame[data-format="1x1"] .inner { font-size: 2.1cqw; padding: 5cqw; }
+.kicker { font-size: 0.8em; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 3.1em; line-height: 1.02; letter-spacing: -0.02em; margin-top: 0.35em; }
+h1 em { font-style: normal; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.frame[data-format="4x5"] h1, .frame[data-format="1x1"] h1 { font-size: 2.5em; }
+.caps { position: relative; margin-top: 1.3em; min-height: 4.6em; }
+.frame[data-format="4x5"] .caps, .frame[data-format="1x1"] .caps { min-height: 3.2em; margin-top: 0.8em; }
+.cap { position: absolute; inset: 0 0 auto 0; font-size: 1.12em; line-height: 1.42; color: var(--muted); opacity: 0; transform: translateY(0.4em); transition: opacity var(--base) var(--ease), transform var(--base) var(--ease); }
+.cap.on { opacity: 1; transform: none; }
+.cap b { color: var(--fg); font-weight: 700; }
+.foot { position: absolute; left: 5.2cqw; bottom: 2.2cqw; font-size: 1.05cqw; color: var(--muted); opacity: 0.75; }
+.frame[data-format="4x5"] .foot, .frame[data-format="1x1"] .foot { left: 6.5cqw; bottom: 2.6cqw; font-size: 1.7cqw; }
+.scene { position: relative; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 0.75em; min-height: 0; }
+.fade { transition: opacity var(--base) var(--ease), transform var(--base) var(--ease), border-color var(--base) var(--ease), background-color var(--base) var(--ease), color var(--base) var(--ease), box-shadow var(--base) var(--ease); }
+.frame.no-anim *, .frame.no-anim *::before, .frame.no-anim *::after { transition: none !important; animation: none !important; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 0.9em; padding: 0.85em 1.05em; }
+.label { font-size: 0.72em; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.mono { font-family: var(--mono); font-size: 0.86em; }
+.swap { position: relative; }
+.swap > * { transition: opacity var(--base) var(--ease), transform var(--base) var(--ease); }
+.swap > *:not(.on) { opacity: 0; transform: translateY(0.5em); pointer-events: none; }
+.swap > * + * { position: absolute; inset: 0; }
+.gate { display: flex; align-items: center; gap: 0.8em; padding: 0.62em 1em; border: 1px solid var(--line); border-radius: 0.8em; background: var(--panel); color: var(--muted); }
+.gate .dot { flex: none; width: 1.5em; height: 1.5em; border-radius: 50%; border: 0.14em solid var(--line); position: relative; }
+.gate .dot::before, .gate .dot::after { content: ""; position: absolute; opacity: 0; transition: opacity var(--fast) var(--ease); }
+.gate .dot::before { left: 0.4em; top: 0.16em; width: 0.38em; height: 0.72em; border: solid var(--on-accent); border-width: 0 0.17em 0.17em 0; transform: rotate(45deg); }
+.gate .dot::after { left: 0.3em; top: 0.58em; width: 0.66em; height: 0.17em; background: #fff; border-radius: 1em; }
+.gate .why { margin-left: auto; font-size: 0.82em; opacity: 0; }
+.gate.ok { color: var(--fg); border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); }
+.gate.ok .dot { background: var(--ok); border-color: var(--ok); }
+.gate.ok .dot::before { opacity: 1; }
+.gate.bad { color: var(--fg); border-color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, var(--panel)); }
+.gate.bad .dot { background: var(--bad); border-color: var(--bad); }
+.gate.bad .dot::after { opacity: 1; }
+.gate.bad .why { opacity: 1; color: var(--bad); }
+.gate.skip { opacity: 0.35; }
+.out { border-radius: 0.9em; padding: 0.85em 1.05em; border: 1px solid var(--line); }
+.out b { display: block; font-family: var(--display); font-weight: 800; font-size: 1.25em; line-height: 1.15; margin-top: 0.2em; }
+.out.good { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.out.good .label { color: var(--on-accent); opacity: 0.7; }
+.out.stop { background: color-mix(in srgb, var(--bad) 14%, var(--panel)); border-color: var(--bad); }
+.out.stop .label { color: var(--bad); }
+.out.idle { color: var(--muted); border-style: dashed; }
+
+
+.controls { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; justify-content: center; }
+.controls button { font: inherit; color: var(--fg); background: var(--panel-2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.controls button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+body.embed .controls { display: none; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="frame" id="frame" data-format="16x9" data-step="0">
+      <div class="inner">
+        <div class="copy">
+          <div class="kicker">Kicker · project name</div>
+          <h1>One idea, with <em>the payoff</em> named</h1>
+          <div class="caps">
+            <p class="cap" data-cls="on:0">Step 0 is the thumbnail. It has to work as a still.</p>
+            <p class="cap" data-cls="on:1-2">Each caption names the steps it shows for.</p>
+            <p class="cap" data-cls="on:3">Hold the payoff. This step is also the reduced-motion still.</p>
+          </div>
+        </div>
+        <div class="scene">
+          <div class="gate fade" data-cls="ok:1-"><span class="dot fade"></span>First check</div>
+          <div class="gate fade" data-cls="ok:2-"><span class="dot fade"></span>Second check</div>
+          <div class="swap">
+            <div class="out idle" data-cls="on:0-2"><span class="label">Result</span><b>&nbsp;</b></div>
+            <div class="out good" data-cls="on:3"><span class="label">Payoff</span><b>State the result in plain words</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot">Footnote: what is illustrative, what is real.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button type="button" id="replay">Replay</button>
+    <button type="button" data-format="16x9" aria-pressed="true">16:9</button>
+    <button type="button" data-format="4x5" aria-pressed="false">4:5</button>
+    <button type="button" data-format="1x1" aria-pressed="false">1:1</button>
+    <span>Add <code>?embed=1</code> to hide these controls. <code>?step=N</code> freezes a still.</span>
+  </div>
+<script>
+/* Timeline: STEPS[i] is the time in seconds at which step i starts.
+   Elements declare the steps they react to:
+     data-cls="on:0-5 ok:7- bad:8-9"   → adds the class while the step is in range.
+   STILL is the step shown for reduced motion. LOOP is the loop length in seconds. */
+const STEPS = [0, 1.0, 1.8, 2.8];
+const STILL = 3;
+const LOOP = 7;
+const frame = document.getElementById("frame");
+const q = new URLSearchParams(location.search);
+const rules = [...frame.querySelectorAll("[data-cls]")].map((el) => ({
+  el,
+  parts: el.dataset.cls.trim().split(/\s+/).map((p) => {
+    const [cls, range] = p.split(":");
+    const [a, b] = range.split("-");
+    return { cls, from: +a, to: b === undefined ? +a : b === "" ? Infinity : +b };
+  }),
+}));
+function show(step) {
+  frame.dataset.step = step;
+  for (const { el, parts } of rules) {
+    const want = new Set(parts.filter((p) => step >= p.from && step <= p.to).map((p) => p.cls));
+    for (const p of parts) el.classList.toggle(p.cls, want.has(p.cls));
+  }
+}
+let timers = [];
+function play() {
+  timers.forEach(clearTimeout); timers = [];
+  frame.classList.add("no-anim"); show(0); void frame.offsetWidth; frame.classList.remove("no-anim");
+  STEPS.forEach((t, i) => { if (i) timers.push(setTimeout(() => show(i), t * 1000)); });
+  if (q.get("loop") !== "0") timers.push(setTimeout(play, LOOP * 1000));
+}
+function setFormat(f) {
+  frame.dataset.format = f;
+  document.querySelectorAll("[data-format]").forEach((b) => b.tagName === "BUTTON" && b.setAttribute("aria-pressed", b.dataset.format === f));
+}
+if (q.get("embed") === "1") document.body.classList.add("embed");
+if (q.get("format")) setFormat(q.get("format"));
+document.querySelectorAll("button[data-format]").forEach((b) => b.addEventListener("click", () => setFormat(b.dataset.format)));
+document.getElementById("replay").addEventListener("click", play);
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (q.has("step")) { frame.classList.add("no-anim"); show(+q.get("step")); }
+else if (reduce) { frame.classList.add("no-anim"); show(STILL); }
+else play();
+</script>
+</body>
+</html>

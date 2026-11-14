@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # new-visual.sh — scaffold a new visual folder from the template.
-# Usage: ./tools/new-visual.sh <visual-name>
+# Usage: ./tools/new-visual.sh <visual-name> [--site]
+#   --site  start from templates/site-visual.html (arndvs.com palette, fonts, timeline)
 
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 <visual-name>" >&2
@@ -18,7 +19,11 @@ if [[ -e "$DIR" ]]; then
 fi
 
 mkdir -p "$DIR"
-cp templates/index.html "$DIR/index.html"
+if [[ "${2:-}" == "--site" ]]; then
+    cp templates/site-visual.html "$DIR/index.html"
+else
+    cp templates/index.html "$DIR/index.html"
+fi
 cp templates/visual-README.md "$DIR/README.md"
 
 echo "Created $DIR/"

@@ -64,6 +64,12 @@ SHARE_CARDS = {
         "AI systems and lifecycle marketing infrastructure that hold up in production.",
         ["Agents and RAG", "Marketing automation", "TypeScript · Python"],
     ),
+    "inkind-first-reward-journey": (
+        "Lifecycle marketing · Work sample",
+        "First-Reward Journey",
+        "The message a rewards app should have sent me, built end to end. Not affiliated with inKind.",
+        ["184 Liquid tests", "146 Rails tests", "11/11 SQL checks"],
+    ),
     "ctrlshft": (
         "AI agent infrastructure · Open source",
         "ctrl+shft",
