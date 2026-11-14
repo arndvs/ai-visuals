@@ -26,17 +26,18 @@ Taken from the dark theme in the site's `src/app/globals.css`.
 |---|---|---|
 | Background, share cards | `#0A0A0A` | `BG` |
 | Background, blog heroes | `#080808` | `HERO_BG` |
-| Accent (the site's `--primary`) | `#FF792A` | `ORANGE` |
-| Gradient end (the site's `.text-gradient`) | `#FFC107` | `AMBER` |
+| Accent (the site's `--primary`) | `#2DCCAE` | `ACCENT` |
+| Gradient end (the site's `.text-gradient`) | `#B2F5E2` | `ACCENT_END` |
 | Headline text | `#FAFAFA` / `#ECECEC` | `WHITE` / `TEXT` |
 | Body text | `#A3A3A3` / `#969696` | `GRAY` / `MUTED` |
 | Panels and chips | `#121212` / `#141414` | `PANEL` / `CHIP` |
 | Hairlines | `#2A2A2A` | `LINE` |
 | Passed marks only | `#7EC98E` | `GREEN` |
 
-- Orange is the only accent. Use it for the eyebrow, one highlighted phrase, and one
-  filled element in the illustration.
-- The highlighted phrase in a headline takes the orange-to-amber gradient, the same one
+- Teal is the only accent. Use it for the eyebrow, one highlighted phrase, and one
+  filled element in the illustration. It is the same teal as the background of the
+  homepage portrait.
+- The highlighted phrase in a headline takes the teal-to-mint gradient, the same one
   the site's headings use.
 - Green appears only on a check mark that means something passed.
 
@@ -60,7 +61,7 @@ Taken from the dark theme in the site's `src/app/globals.css`.
 ## Share cards
 
 - One per project page, plus the default card for every other page.
-- Top to bottom: a short orange rule, an uppercase eyebrow, the title, one sentence, three
+- Top to bottom: a short teal rule, an uppercase eyebrow, the title, one sentence, three
   chips, then a footer with the name, the title "Applied AI Full-Stack Engineer", and
   arndvs.com.
 - The sentence says what the thing is or what rule it enforces. It is not a slogan.

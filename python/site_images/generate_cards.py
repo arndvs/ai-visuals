@@ -23,7 +23,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
 from style import (
-    AMBER,
+    ACCENT,
+    ACCENT_END,
     BAR,
     BG,
     BLOCK,
@@ -38,7 +39,6 @@ from style import (
     LINE,
     MUTED,
     NOTE,
-    ORANGE,
     PANEL,
     SOFT,
     TEXT,
@@ -116,8 +116,8 @@ def share_card(eyebrow, title, sub, tags):
     ImageDraw.Draw(glow).ellipse((720, -260, 1460, 480), fill=GLOW)
     im = Image.blend(im, glow.filter(ImageFilter.GaussianBlur(140)), 0.9)
     d = ImageDraw.Draw(im)
-    d.rectangle((80, 78, 128, 84), fill=ORANGE)
-    spaced(d, (80, 108), eyebrow.upper(), text(21, 500), ORANGE, 3.2)
+    d.rectangle((80, 78, 128, 84), fill=ACCENT)
+    spaced(d, (80, 108), eyebrow.upper(), text(21, 500), ACCENT, 3.2)
     tf = display(92)
     if d.textlength(title, font=tf) > W - 160:
         tf = display(76)
@@ -134,7 +134,7 @@ def share_card(eyebrow, title, sub, tags):
     x = 80 + d.textlength("Aaron Davis", font=nf) + 14
     d.text((x, 562), "·  Applied AI Full-Stack Engineer", font=text(24), fill=GRAY)
     uf = text(24, 500)
-    d.text((W - 80 - d.textlength("arndvs.com", font=uf), 562), "arndvs.com", font=uf, fill=ORANGE)
+    d.text((W - 80 - d.textlength("arndvs.com", font=uf), 562), "arndvs.com", font=uf, fill=ACCENT)
     return im
 
 
@@ -148,14 +148,14 @@ def px(v):
 
 
 def hero_base(eyebrow, line1, line2, highlight, sub, tags, note):
-    """Left column of a blog hero. Words in `highlight` take the orange-to-amber gradient."""
+    """Left column of a blog hero. Words in `highlight` take the teal-to-mint gradient."""
     W, H = px(1600), px(900)
     im = Image.new("RGB", (W, H), HERO_BG)
     glow = Image.new("RGB", (W, H), HERO_BG)
     ImageDraw.Draw(glow).ellipse((px(900), px(120), px(1650), px(820)), fill=GLOW)
     im = Image.blend(im, glow.filter(ImageFilter.GaussianBlur(px(120))), 0.85)
     d = ImageDraw.Draw(im)
-    spaced(d, (px(112), px(190)), eyebrow.upper(), text(px(20), 700), ORANGE, px(5.4))
+    spaced(d, (px(112), px(190)), eyebrow.upper(), text(px(20), 700), ACCENT, px(5.4))
     size = 104
     tf = display(px(size))
     while max(d.textlength(line1, font=tf), d.textlength(line2, font=tf)) > px(740):
@@ -166,7 +166,7 @@ def hero_base(eyebrow, line1, line2, highlight, sub, tags, note):
         x = px(108)
         for word in line.split():
             if word in highlight:
-                gradient_text(im, (x, y), word, tf, ORANGE, AMBER)
+                gradient_text(im, (x, y), word, tf, ACCENT, ACCENT_END)
             else:
                 d.text((x, y), word, font=tf, fill=TEXT)
             x += d.textlength(word + " ", font=tf)
@@ -222,8 +222,8 @@ def hero_readable_vs_explainable():
     d.line((px(968), px(396), px(1452), px(396)), fill=LINE, width=px(2))
     label(d, 968, 424, "RUN IT")
     tiles(d, 968, 464, "banana", 62, 12, BLOCK, TEXT, LINE)
-    arrow_down(d, px(1190), px(548), px(34), ORANGE)
-    tiles(d, 968, 610, "aaabnn", 62, 12, ORANGE, HERO_BG)
+    arrow_down(d, px(1190), px(548), px(34), ACCENT)
+    tiles(d, 968, 610, "aaabnn", 62, 12, ACCENT, HERO_BG)
     check(d, px(968), px(700), px(18), GREEN)
     d.text((px(998), px(696)), "sorted, so I believe the explanation", font=text(px(17), 500), fill=GREEN)
     return im
@@ -241,18 +241,18 @@ def hero_programming_as_theory_building():
         "After Peter Naur, Programming as Theory Building.",
     )
     panel(d)
-    label(d, 968, 186, "THEORY", ORANGE)
+    label(d, 968, 186, "THEORY", ACCENT)
     d.text((px(968), px(212)), "why the code is the way it is", font=text(px(19)), fill=MUTED)
     x0, y0, x1, y1, dash, gap = 968, 262, 1452, 712, 16, 12
     x = x0
     while x < x1:
         for y in (y0, y1):
-            d.line((px(x), px(y), px(min(x + dash, x1)), px(y)), fill=ORANGE, width=px(3))
+            d.line((px(x), px(y), px(min(x + dash, x1)), px(y)), fill=ACCENT, width=px(3))
         x += dash + gap
     y = y0
     while y < y1:
         for x in (x0, x1):
-            d.line((px(x), px(y), px(x), px(min(y + dash, y1))), fill=ORANGE, width=px(3))
+            d.line((px(x), px(y), px(x), px(min(y + dash, y1))), fill=ACCENT, width=px(3))
         y += dash + gap
     for i, t in enumerate(["what the business needs", "what was tried and dropped", "what must never change"]):
         d.text((px(1000), px(292 + i * 34)), "·  " + t, font=text(px(18)), fill=MUTED)
@@ -294,7 +294,7 @@ def hero_tailwind_indicator():
     bf = text(px(22), 700)
     badge = "lg  ·  1280 × 720"
     bw = d.textlength(badge, font=bf) + px(40)
-    d.rounded_rectangle((px(962), px(676), px(962) + bw, px(726)), px(25), fill=ORANGE)
+    d.rounded_rectangle((px(962), px(676), px(962) + bw, px(726)), px(25), fill=ACCENT)
     d.text((px(962) + px(20), px(687)), badge, font=bf, fill=HERO_BG)
     return im
 
@@ -317,7 +317,7 @@ def hero_sanity_content_ops():
         bar(d, 968, 268 + i * 26, w, 12)
     ef = text(px(20), 700)
     ew = d.textlength("Enhance", font=ef) + px(48)
-    d.rounded_rectangle((px(968), px(370), px(968) + ew, px(422)), px(26), fill=ORANGE)
+    d.rounded_rectangle((px(968), px(370), px(968) + ew, px(422)), px(26), fill=ACCENT)
     d.text((px(968) + px(24), px(383)), "Enhance", font=ef, fill=HERO_BG)
     d.line((px(968), px(456), px(1452), px(456)), fill=LINE, width=px(2))
     rows = [("SEO title", 300), ("Meta description", 360), ("Focus keyword", 180), ("Structured data", 250)]

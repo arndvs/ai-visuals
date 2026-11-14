@@ -16,8 +16,8 @@ DEFAULT_OUT = REPO / "visuals" / "arndvs-site-images"
 # Site palette (dark theme)
 BG = (10, 10, 10)  # share-card background
 HERO_BG = (8, 8, 8)  # blog-hero background
-ORANGE = (255, 121, 42)  # --primary, and the start of .text-gradient
-AMBER = (255, 193, 7)  # the end of .text-gradient
+ACCENT = (45, 204, 174)  # --primary (#2DCCAE), and the start of .text-gradient
+ACCENT_END = (178, 245, 226)  # the end of .text-gradient (#B2F5E2)
 WHITE = (250, 250, 250)
 TEXT = (236, 236, 236)
 GRAY = (163, 163, 163)
@@ -31,7 +31,7 @@ BAR = (50, 50, 50)
 BLOCK = (30, 30, 30)
 BLOCK_ALT = (24, 24, 24)
 SOFT = (76, 76, 76)
-GLOW = (46, 24, 10)  # blurred orange glow behind the right-hand side
+GLOW = (8, 40, 34)  # blurred teal glow behind the right-hand side
 GREEN = (126, 201, 142)  # "passed" marks only
 
 
@@ -76,8 +76,8 @@ def chips(d, x, y, items, f, pad_x, h, gap, fill, outline, text_fill):
         x += w + gap
 
 
-def gradient_text(im, xy, s, f, c0=ORANGE, c1=AMBER):
-    """The site's .text-gradient: orange to amber across the word."""
+def gradient_text(im, xy, s, f, c0=ACCENT, c1=ACCENT_END):
+    """The site's .text-gradient: teal to mint across the word."""
     d = ImageDraw.Draw(im)
     left, top, right, bottom = (int(v) for v in d.textbbox(xy, s, font=f))
     right, bottom = right + 2, bottom + 2
