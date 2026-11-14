@@ -1,0 +1,416 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>The Spam Gauntlet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap">
+<style>
+/* Layout: a fixed-size video frame (scaled to fit). A stream of identical-looking form submissions runs through seven checks; junk drops out at each one and a single real patient reaches the front desk. */
+:root {
+  --bg: #f2f2ef;
+  --surface: #ffffff;
+  --fg: #1b1c1a;
+  --muted: #64665f;
+  --line: #dcdcd5;
+  --accent: #2f7a63;
+  --accent-fg: #ffffff;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* frame (deliberately one dark look in both themes) */
+  --frame-fg: #eef0ec;
+  --paper: #efe7d6;
+  --ink: #2a2620;
+  --catch: #ef6f5e;
+  --pass: #6fd8b0;
+  --gate: rgba(238,240,236,.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121412; --surface: #1b1e1b; --fg: #ebede6; --muted: #9a9d92;
+    --line: #2c302b; --accent: #7fd1b0; --accent-fg: #0f1a15; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121412; --surface: #1b1e1b; --fg: #ebede6; --muted: #9a9d92;
+  --line: #2c302b; --accent: #7fd1b0; --accent-fg: #0f1a15; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--display); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 16px 20px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; height: 100svh; overflow: hidden; }
+.page-head h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.page-head p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; max-width: 62ch; }
+
+.stage { position: relative; margin-inline: auto; overflow: hidden; border-radius: 16px; flex: 1 1 auto; min-height: 0; width: auto; max-width: 100%; aspect-ratio: var(--ar); box-shadow: 0 1px 0 var(--line), 0 18px 50px -24px rgba(16, 20, 18, .45); background: #121615; }
+
+/* ---------- the frame ---------- */
+.frame { position: absolute; top: 0; left: 0; transform-origin: 0 0; overflow: hidden; color: var(--frame-fg); font-family: var(--display); --k: 1; }
+.bg { position: absolute; inset: 0; background: radial-gradient(1000px 720px at 12% -8%, rgba(110, 130, 120, .32), transparent 62%), radial-gradient(900px 700px at 105% 108%, rgba(60, 130, 105, .22), transparent 60%), #121615; }
+.bg.b { opacity: 0; transition: opacity calc(1200ms * var(--k)); background: radial-gradient(1000px 720px at 88% -8%, rgba(40, 150, 115, .38), transparent 62%), #0b1714; }
+.frame[data-state="done"] .bg.b { opacity: 1; }
+.grain { position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.2px); background-size: 30px 30px; mask-image: linear-gradient(to bottom, #000, transparent 85%); }
+.frame.instant *, .frame.instant { transition: none !important; }
+
+.frame-head { position: absolute; left: 72px; right: 72px; top: 64px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.chip { display: inline-flex; align-items: center; gap: 14px; padding: 12px 24px 12px 18px; border-radius: 999px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.13); font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.chip .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--catch); box-shadow: 0 0 18px var(--catch); transition: background calc(900ms * var(--k)), box-shadow calc(900ms * var(--k)); }
+.frame[data-state="done"] .chip .dot { background: var(--pass); box-shadow: 0 0 18px var(--pass); }
+.tag { font-family: var(--mono); font-size: 20px; color: rgba(238,240,236,.5); letter-spacing: .02em; text-align: right; }
+
+.swap { display: inline-grid; }
+.swap > * { grid-area: 1 / 1; transition: opacity calc(650ms * var(--k)) ease, transform calc(650ms * var(--k)) cubic-bezier(.3,0,.2,1), filter calc(650ms * var(--k)) ease; }
+.swap .b { opacity: 0; transform: translateY(12px); filter: blur(4px); }
+.frame[data-state="done"] .swap .a { opacity: 0; transform: translateY(-12px); filter: blur(4px); }
+.frame[data-state="done"] .swap .b { opacity: 1; transform: none; filter: none; transition-delay: calc(350ms * var(--k)); }
+
+/* gates */
+.gate { position: absolute; }
+.gate .bar { position: absolute; background: var(--gate); border-radius: 3px; transition: background calc(250ms * var(--k)), box-shadow calc(250ms * var(--k)); }
+.gate.hit .bar { background: var(--catch); box-shadow: 0 0 24px rgba(239,111,94,.6); transition-duration: 60ms; }
+.gate.ok .bar { background: var(--pass); box-shadow: 0 0 24px rgba(111,216,176,.6); transition-duration: 60ms; }
+.gate .lbl { position: absolute; box-sizing: border-box; display: flex; gap: 12px; align-items: baseline; }
+.gate .no { font-family: var(--mono); font-size: 20px; color: rgba(238,240,236,.45); font-variant-numeric: tabular-nums; }
+.gate .name { font-size: 27px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+.gate .caught { font-family: var(--mono); font-size: 19px; color: var(--catch); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.land .gate .lbl { flex-direction: column; gap: 4px; align-items: flex-start; }
+
+/* submissions */
+.card { position: absolute; left: 0; top: 0; box-sizing: border-box; width: var(--cw); height: var(--ch); padding: 10px 16px; border-radius: 12px; background: var(--paper); color: var(--ink); box-shadow: 0 10px 26px -12px rgba(0,0,0,.7); display: flex; flex-direction: column; justify-content: center; will-change: transform; transition: background calc(200ms * var(--k)), color calc(200ms * var(--k)); }
+.card .t { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; white-space: nowrap; }
+.card .r { font-family: var(--mono); font-size: 17px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .65; }
+.card.caught { background: var(--catch); color: #2a0d08; z-index: 0; }
+.card:not(.caught) { z-index: 1; }
+.card.caught .r { opacity: 1; }
+.card.real { background: var(--pass); color: #08201a; }
+.card.real .r { opacity: .9; }
+
+/* inbox */
+.inbox { position: absolute; box-sizing: border-box; padding: 18px 24px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,.16); background: rgba(255,255,255,.04); display: flex; flex-direction: column; justify-content: center; gap: 6px; transition: border-color calc(500ms * var(--k)), box-shadow calc(500ms * var(--k)); }
+.inbox .role { font-family: var(--mono); font-size: 18px; letter-spacing: .08em; text-transform: uppercase; color: rgba(238,240,236,.55); }
+.inbox .title { font-size: 32px; font-weight: 700; letter-spacing: -0.015em; }
+.inbox .got { font-family: var(--mono); font-size: 19px; color: var(--pass); opacity: 0; transition: opacity calc(400ms * var(--k)); }
+.frame[data-state="done"] .inbox { border-color: var(--pass); box-shadow: 0 0 0 6px rgba(111,216,176,.12), 0 0 40px rgba(111,216,176,.22); }
+.frame[data-state="done"] .inbox .got { opacity: 1; }
+
+.frame-foot { position: absolute; left: 72px; right: 72px; bottom: 64px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+.tally { display: flex; gap: 44px; align-items: flex-end; }
+.count .lbl { font-family: var(--mono); font-size: 19px; letter-spacing: .06em; text-transform: uppercase; color: rgba(238,240,236,.55); }
+.count .num { font-size: 104px; font-weight: 700; line-height: .95; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--catch); }
+.count.good .num { color: var(--pass); }
+.big { font-size: 46px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; text-align: right; text-wrap: balance; max-width: 560px; }
+
+/* ---------- controls ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: center; }
+.group { display: flex; align-items: center; gap: 8px; }
+.group .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.seg button { border: 0; background: transparent; color: var(--fg); font: 500 13px/1 var(--display); padding: 8px 11px; border-radius: 7px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 14px/1 var(--display); padding: 11px 16px; border-radius: 10px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); min-width: 200px; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+body.clean .chrome { display: none; }
+body.clean .wrap { padding-block: 16px; min-height: 100svh; justify-content: center; }
+body.clean .stage { flex: 1 1 auto; max-width: 100%; box-shadow: none; }
+.exit { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; opacity: 0; transition: opacity .2s; }
+body:not(.clean) .exit { display: none; }
+.exit:hover, .exit:focus-visible { opacity: 1; }
+</style>
+
+<div class="wrap">
+  <header class="page-head chrome">
+    <h1>The spam gauntlet</h1>
+    <p>AlignSD's insurance form runs every submission through seven checks before a person sees it. Bots, proxies and sales pitches drop out along the way. The front desk only gets the real patient.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="frame" id="frame" data-state="idle">
+      <div class="bg"></div>
+      <div class="bg b"></div>
+      <div class="grain"></div>
+      <div id="gates"></div>
+      <div class="inbox" id="inbox"><div class="role">Delivered to</div><div class="title">Front desk</div><div class="got">new patient · prenatal visit</div></div>
+      <div id="cards"></div>
+      <div class="frame-head">
+        <div class="chip"><span class="dot"></span><span class="swap"><span class="a">Incoming</span><span class="b">Delivered</span></span></div>
+        <div class="tag">insurance form · 7 checks</div>
+      </div>
+      <div class="frame-foot">
+        <div class="tally">
+          <div class="count"><div class="lbl">Blocked</div><div class="num" id="blocked">0</div></div>
+          <div class="count good"><div class="lbl">Real</div><div class="num" id="real">0</div></div>
+        </div>
+        <div class="big swap"><span class="a">Who's filling out your forms?</span><span class="b">Seven checks. One real patient.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls chrome">
+    <button class="btn primary" id="play" type="button">Run the stream</button>
+    <button class="btn" id="restart" type="button">Restart</button>
+    <div class="group"><span class="lbl">Speed</span>
+      <div class="seg" id="speed">
+        <button type="button" data-v="0.6" aria-pressed="false">0.6×</button>
+        <button type="button" data-v="1" aria-pressed="true">1×</button>
+        <button type="button" data-v="1.5" aria-pressed="false">1.5×</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Format</span>
+      <div class="seg" id="format">
+        <button type="button" data-v="4:5" aria-pressed="true">4:5</button>
+        <button type="button" data-v="1:1" aria-pressed="false">1:1</button>
+        <button type="button" data-v="16:9" aria-pressed="false">16:9</button>
+      </div>
+    </div>
+    <div class="group"><span class="lbl">Loop</span>
+      <div class="seg" id="loop">
+        <button type="button" data-v="on" aria-pressed="true">On</button>
+        <button type="button" data-v="off" aria-pressed="false">Off</button>
+      </div>
+    </div>
+    <button class="btn" id="clean" type="button">Clean view</button>
+  </div>
+</div>
+<button class="btn exit" id="exit" type="button">Exit clean view</button>
+
+<script>
+/* ===== Visual data (the seven layers in AlignSD's form protection) ===== */
+const GATES = [
+  { name: "Honeypot + timing", why: ["hidden field filled", "sent in 0.4 s"] },
+  { name: "Rate limit",        why: ["3rd try today · limit 2"] },
+  { name: "Proxy / VPN check", why: ["datacenter IP", "VPN exit node"] },
+  { name: "US only",           why: ["IP outside the US"] },
+  { name: "IP blocklist",      why: ["blocklisted range"] },
+  { name: "Email check",       why: ["throwaway email"] },
+  { name: "AI review",         why: ["cleaning-service pitch", "SEO sales pitch"] }
+];
+/* each submission: the gate that stops it, or -1 for the real patient */
+const STREAM = [0, 2, 0, 6, 1, 3, 0, 5, 2, 4, -1, 6, 3, 5, 0, 2];
+
+/* ===== Setup ===== */
+const stage = document.getElementById("stage");
+const frame = document.getElementById("frame");
+const gatesEl = document.getElementById("gates");
+const cardsEl = document.getElementById("cards");
+const inbox = document.getElementById("inbox");
+const blockedEl = document.getElementById("blocked");
+const realEl = document.getElementById("real");
+const playBtn = document.getElementById("play");
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const FORMATS = { "4:5": [1080, 1350], "1:1": [1080, 1080], "16:9": [1920, 1080] };
+let format = "4:5", speed = 1, loopOn = true, state = "idle", running = [], timer = null, gen = 0;
+
+const gateEls = GATES.map((g, i) => {
+  const d = document.createElement("div");
+  d.className = "gate";
+  d.innerHTML = `<div class="bar"></div><div class="lbl"><span class="no">${i + 1}</span><span class="name">${g.name}</span><span class="caught">0</span></div>`;
+  gatesEl.appendChild(d);
+  return { el: d, bar: d.querySelector(".bar"), lbl: d.querySelector(".lbl"), caught: d.querySelector(".caught"), n: 0 };
+});
+
+/* ===== Layout ===== */
+function geo() {
+  const [W, H] = FORMATS[format];
+  const land = W > H;
+  const x = 72, w = W - 144, top = land ? 175 : 190, bottom = H - (land ? 250 : 270);
+  if (!land) {
+    const inboxH = W === H ? 110 : 140;
+    const labelW = 390, laneX = x + labelW, laneW = w - labelW;
+    const gTop = top + 70, gBot = bottom - inboxH - 50;
+    const step = (gBot - gTop) / (GATES.length - 1);
+    return { land, W, H, x, w, top, bottom, inboxH, labelW, laneX, laneW, gTop, step,
+      cw: Math.min(360, laneW - 80), ch: W === H ? 62 : 70,
+      gatePos: i => gTop + i * step,
+      at: t => [laneX + laneW / 2, gTop + t * step],            /* t = gate index (float) */
+      start: [laneX + laneW / 2, top + 4],
+      inboxBox: [laneX, bottom - inboxH, laneW, inboxH] };
+  }
+  const inboxW = 300;
+  const gL = x + 150, gR = x + w - inboxW - 160;
+  const step = (gR - gL) / (GATES.length - 1);
+  const laneY = Math.round((top + 130 + bottom) / 2);
+  return { land, W, H, x, w, top, bottom, inboxW, gL, step, laneY,
+    cw: 216, ch: 72,
+    gatePos: i => gL + i * step,
+    at: t => [gL + t * step, laneY],
+    start: [x - 160, laneY],
+    inboxBox: [x + w - inboxW, laneY - 90, inboxW, 180] };
+}
+function layout() {
+  const g = geo();
+  frame.classList.toggle("land", g.land);
+  frame.style.setProperty("--cw", g.cw + "px");
+  frame.style.setProperty("--ch", g.ch + "px");
+  gateEls.forEach((G, i) => {
+    const p = g.gatePos(i);
+    if (!g.land) {
+      G.bar.style.left = g.laneX + "px"; G.bar.style.top = p - 3 + "px"; G.bar.style.width = g.laneW + "px"; G.bar.style.height = "6px";
+      G.lbl.style.left = g.x + "px"; G.lbl.style.top = p - 18 + "px"; G.lbl.style.width = g.labelW - 20 + "px";
+    } else {
+      G.bar.style.left = p - 3 + "px"; G.bar.style.top = g.laneY - 140 + "px"; G.bar.style.width = "6px"; G.bar.style.height = "280px";
+      G.lbl.style.left = p - 90 + "px"; G.lbl.style.top = g.top + 10 + "px"; G.lbl.style.width = "180px";
+    }
+  });
+  const [ix, iy, iw, ih] = g.inboxBox;
+  Object.assign(inbox.style, { left: ix + "px", top: iy + "px", width: iw + "px", height: ih + "px" });
+}
+
+/* ===== Sizing ===== */
+function scaleFrame() {
+  const [FW, FH] = FORMATS[format];
+  const s = Math.min(stage.clientWidth / FW, stage.clientHeight / FH);
+  frame.style.transform = `scale(${s})`;
+}
+function applyFormat() {
+  const [FW, FH] = FORMATS[format];
+  frame.style.width = FW + "px"; frame.style.height = FH + "px";
+  stage.style.setProperty("--ar", `${FW} / ${FH}`);
+  layout(); scaleFrame();
+}
+
+/* ===== Helpers ===== */
+function track(a) { running.push(a); return a.finished.catch(() => {}); }
+function wait(ms) { return track(frame.animate([{ opacity: 1 }, { opacity: 1 }], { duration: ms })); }
+const T = (p, s = 1) => `translate(${p[0]}px, ${p[1]}px) translate(-50%, -50%) scale(${s})`;
+function flash(G, cls) { G.el.classList.add(cls); setTimeout(() => G.el.classList.remove(cls), 260 / speed); }
+let blocked = 0;
+
+async function runCard(fail, idx, k, g) {
+  const geom = geo();
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<span class="t">Insurance form</span><span class="r">new submission</span>`;
+  cardsEl.appendChild(card);
+  const hop = 360 * k;
+  const last = fail < 0 ? GATES.length - 1 : fail;
+  /* enter, then hop gate to gate */
+  let prev = geom.start;
+  for (let i = 0; i <= last; i++) {
+    if (g !== gen) return;
+    const p = geom.at(i);
+    await track(card.animate([{ transform: T(prev) }, { transform: T(p) }], { duration: i === 0 ? hop * 1.3 : hop, easing: i === 0 ? "cubic-bezier(.2,.7,.3,1)" : "cubic-bezier(.5,0,.5,1)", fill: "forwards" }));
+    prev = p;
+    if (i === fail) break;
+    flash(gateEls[i], "ok");
+  }
+  if (g !== gen) return;
+  if (fail >= 0) {
+    const G = gateEls[fail], why = GATES[fail].why[idx % GATES[fail].why.length];
+    card.classList.add("caught");
+    card.querySelector(".r").textContent = why;
+    flash(G, "hit");
+    G.n++; G.caught.textContent = G.n;
+    await track(card.animate([{ transform: T(prev, 1) }, { transform: T(prev, 1.08) }, { transform: T(prev, 1) }], { duration: 240 * k, fill: "forwards" }));
+    const aside = geom.land ? [prev[0], prev[1] + 90] : [prev[0] + 110, prev[1]];
+    await track(card.animate([{ transform: T(prev) }, { transform: T(aside) }], { duration: 220 * k, easing: "cubic-bezier(.3,0,.2,1)", fill: "forwards" }));
+    prev = aside;
+    await wait(380 * k);
+    const out = geom.land ? [prev[0], prev[1] + 220] : [prev[0] + 360, prev[1]];
+    await track(card.animate([{ transform: T(prev), opacity: 1 }, { transform: T(out, .7), opacity: 0 }], { duration: 520 * k, easing: "cubic-bezier(.5,0,.8,.4)", fill: "forwards" }));
+    blocked++; blockedEl.textContent = blocked;
+    card.remove();
+  } else {
+    card.classList.add("real");
+    card.querySelector(".r").textContent = "passed all 7 checks";
+    const [ix, iy, iw, ih] = geom.inboxBox;
+    const dest = [ix + iw / 2, iy + ih / 2];
+    await track(card.animate([{ transform: T(prev) }, { transform: T(dest, .9), opacity: 1 }, { transform: T(dest, .6), opacity: 0 }], { duration: 900 * k, easing: "cubic-bezier(.4,0,.3,1)", fill: "forwards" }));
+    realEl.textContent = "1";
+    card.remove();
+  }
+}
+
+async function runStream() {
+  const g = gen;
+  state = "running"; updateButtons();
+  const k = 1 / speed;
+  frame.style.setProperty("--k", k);
+  if (reduce) {
+    STREAM.forEach(f => { if (f >= 0) { gateEls[f].n++; gateEls[f].caught.textContent = gateEls[f].n; blocked++; } });
+    blockedEl.textContent = blocked; realEl.textContent = "1";
+    await wait(400 * k);
+  } else {
+    const jobs = [];
+    for (let i = 0; i < STREAM.length; i++) {
+      if (g !== gen) return;
+      jobs.push(runCard(STREAM[i], i, k, g));
+      await wait(520 * k);
+    }
+    await Promise.all(jobs);
+  }
+  if (g !== gen) return;
+  frame.dataset.state = "done";
+  state = "done"; updateButtons();
+}
+
+function setInstant() {
+  frame.classList.add("instant");
+  cardsEl.innerHTML = "";
+  frame.dataset.state = "idle";
+  blocked = 0; blockedEl.textContent = "0"; realEl.textContent = "0";
+  gateEls.forEach(G => { G.n = 0; G.caught.textContent = "0"; G.el.classList.remove("hit", "ok"); });
+  state = "idle";
+  void frame.offsetWidth;
+  frame.classList.remove("instant");
+  updateButtons();
+}
+async function reset() {
+  const k = 1 / speed;
+  await track(frame.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380 * k, fill: "both" }));
+  running.forEach(a => a.cancel()); running = [];
+  setInstant();
+  await track(frame.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 380 * k, fill: "both" }));
+  running = [];
+}
+function updateButtons() { playBtn.textContent = state === "done" ? "Run it again" : "Run the stream"; }
+
+async function stopAll() {
+  clearTimeout(timer);
+  gen++;
+  running.forEach(a => { try { a.cancel(); } catch (e) {} });
+  running = [];
+  frame.getAnimations({ subtree: true }).forEach(a => a.cancel());
+}
+function schedule() {
+  clearTimeout(timer);
+  if (!loopOn) return;
+  timer = setTimeout(async () => {
+    if (state === "idle") await runStream();
+    else if (state === "done") await reset();
+    schedule();
+  }, state === "idle" ? 900 : 3600);
+}
+
+/* ===== Controls ===== */
+playBtn.addEventListener("click", async () => {
+  await stopAll(); setInstant(); await runStream(); schedule();
+});
+document.getElementById("restart").addEventListener("click", async () => { await stopAll(); setInstant(); schedule(); });
+function segment(id, onPick) {
+  const el = document.getElementById(id);
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    el.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    onPick(b.dataset.v);
+  });
+}
+segment("speed", v => { speed = parseFloat(v); });
+segment("format", async v => { await stopAll(); format = v; applyFormat(); setInstant(); schedule(); });
+segment("loop", v => { loopOn = v === "on"; if (loopOn && state !== "running") schedule(); else clearTimeout(timer); });
+document.getElementById("clean").addEventListener("click", () => { document.body.classList.add("clean"); requestAnimationFrame(scaleFrame); });
+document.getElementById("exit").addEventListener("click", () => { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { document.body.classList.remove("clean"); requestAnimationFrame(scaleFrame); }
+  if (e.key === " " && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); playBtn.click(); }
+});
+new ResizeObserver(() => scaleFrame()).observe(stage);
+
+/* ===== Boot ===== */
+(async () => {
+  try { await Promise.all([document.fonts.load('700 26px "Bricolage Grotesque"'), document.fonts.load('20px "IBM Plex Mono"')]); } catch (e) {}
+  applyFormat();
+  setInstant();
+  timer = setTimeout(async () => { applyFormat(); await runStream(); schedule(); }, 1000);
+})();
+</script>
+
+</body></html>
