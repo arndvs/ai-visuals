@@ -7,6 +7,7 @@ site's background to its teal in four steps, by quartile of the active days.
     python generate_linkedin_grid.py --dense    # 112 weeks in two bands, older year on top
     python generate_linkedin_grid.py --calendar arndvs            # refresh from the GitHub contribution calendar
     python generate_linkedin_grid.py --commits arndvs/arndvs ...  # refresh from commits in the named repos
+    python generate_linkedin_grid.py --growth   # illustration, not data: few tiles on the left, more and more to the right
 
 Rules: rules/site-images.md, "LinkedIn banner".
 """
@@ -96,13 +97,44 @@ def draw(days, today, dense):
     return im.resize((W * SCALE, H * SCALE), Image.LANCZOS), start, len(vals), sum(vals)
 
 
+def draw_growth(seed=7):
+    """An illustration, not data: the grid fills and brightens from left to right."""
+    import random
+    rnd = random.Random(seed)
+    cols, rows = 56, 14
+    pitch = W / cols
+    gap, radius = pitch * 0.17, pitch * 0.15
+    k = SCALE * SS
+    im = Image.new("RGB", (W * k, H * k), style.BG)
+    d = ImageDraw.Draw(im)
+    for c in range(cols):
+        t = max(0.0, (c - 9) / (cols - 10))  # the first columns sit behind the profile photo and stay empty
+        fill = 0.03 + 0.95 * t ** 1.6  # share of tiles lit in this column
+        for r in range(rows):
+            level = 0
+            if t > 0 and rnd.random() < fill:
+                level = min(4, max(1, round(1 + 3 * t ** 1.3 + rnd.uniform(-1.3, 1.0))))
+            x0, y0 = c * pitch + gap / 2, r * pitch + gap / 2
+            box = [round(v * k) for v in (x0, y0, x0 + pitch - gap, y0 + pitch - gap)]
+            d.rounded_rectangle(box, radius=radius * k, fill=shade(level))
+    return im.resize((W * SCALE, H * SCALE), Image.LANCZOS)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--calendar", metavar="LOGIN", help="refresh the data from the GitHub contribution calendar")
     ap.add_argument("--commits", nargs="+", metavar="OWNER/REPO", help="refresh the data from commits in these repos")
     ap.add_argument("--dense", action="store_true", help="112 weeks in two bands instead of 28 weeks")
-    ap.add_argument("--out", type=Path, default=OUT)
+    ap.add_argument("--growth", action="store_true", help="draw the left-to-right illustration instead of data")
+    ap.add_argument("--out", type=Path, default=None)
     a = ap.parse_args()
+    if a.growth:
+        out = a.out or OUT.with_name("banner-growth-grid.png")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        draw_growth().save(out, optimize=True)
+        print(f"{out}: illustration, not data")
+        return
+    a.out = a.out or OUT
     if a.calendar or a.commits:
         today = datetime.now(TZ).date()
         days, source = from_calendar(a.calendar, today) if a.calendar else from_commits(a.commits, today)
