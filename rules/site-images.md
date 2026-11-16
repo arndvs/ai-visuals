@@ -76,6 +76,11 @@ Taken from the dark theme in the site's `src/app/globals.css`.
   as one identity.
 - The profile photo covers the lower left of the banner, so all text starts at x=470 or
   further right.
+- A second banner, the activity grid, has no text. `generate_linkedin_grid.py` draws it from
+  real per-day counts in `python/site_images/data/activity-days.json`: one column per week,
+  four teal steps by quartile. It is never drawn from made-up data. It is written at double
+  size as a PNG (3168×792) so the tiles stay sharp, to
+  `visuals/arndvs-site-images/linkedin/banner-activity-grid.png`.
 - Written to `visuals/arndvs-site-images/linkedin/banner.jpg`. It is uploaded to LinkedIn
   by hand and is not copied into the site repo.
 
