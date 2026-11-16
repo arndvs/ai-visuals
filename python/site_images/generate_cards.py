@@ -61,7 +61,7 @@ SHARE_CARDS = {
     "og-image": (
         "Applied AI Full-Stack Engineer",
         "Aaron Davis",
-        "AI systems and lifecycle marketing infrastructure that hold up in production.",
+        "I build AI features and the systems around them, from discovery to production.",
         ["Agents and RAG", "Marketing automation", "TypeScript · Python"],
     ),
     "inkind-first-reward-journey": (
@@ -158,10 +158,14 @@ def linkedin_banner():
     x = 470
     d.rectangle((x, 66, x + 48, 72), fill=ACCENT)
     spaced(d, (x, 92), "APPLIED AI FULL-STACK ENGINEER", text(20, 500), ACCENT, 3.2)
-    tf = display(56)
-    d.text((x - 3, 132), "AI systems that", font=tf, fill=WHITE)
-    w = d.textlength("AI systems that ", font=tf)
-    gradient_text(im, (x - 3 + w, 132), "hold up in production", tf, ACCENT, ACCENT_END)
+    # Largest size up to 56px at which the whole headline fits before the right margin.
+    size = 56
+    while size > 36 and d.textlength("I build AI features and the systems around them", font=display(size)) > W - x - 72:
+        size -= 1
+    tf = display(size)
+    d.text((x - 3, 132), "I build AI features", font=tf, fill=WHITE)
+    w = d.textlength("I build AI features ", font=tf)
+    gradient_text(im, (x - 3 + w, 132), "and the systems around them", tf, ACCENT, ACCENT_END)
     d = ImageDraw.Draw(im)
     d.text(
         (x, 222),
