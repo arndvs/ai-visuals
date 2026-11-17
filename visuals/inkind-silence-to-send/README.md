@@ -5,8 +5,8 @@ The LinkedIn visual for the first-reward journey post. It opens on a $25 reward 
 ## What it does
 
 - **Hook (0–2.6 s):** the headline names the $25 reward and the two saved spots. The phone shows only a lock screen with no notifications while its date moves from October 14 to October 21 to October 28. The caption says "Two weeks later, nothing had followed up."
-- **Build (3.3–5.3 s):** Rails outbox, Snowflake view, Braze profile and Liquid checks light up in order.
-- **Payoff (6 s on):** the push arrives ("Your $25 is waiting at Lantern Row"), the headline changes to "Now there's one.", and the test counts appear (184 Liquid, 146 Rails, 11 SQL checks). The payoff holds for about 5 seconds, then the 11.5-second loop restarts.
+- **Build (3.3–5.3 s):** Rails backend, Snowflake view, Braze profile and Liquid checks light up in order.
+- **Payoff (6 s on):** the push arrives ("Your $25 is waiting at Lantern Row"), the headline changes to "Now there's a message.", and the test counts appear (184 Liquid, 146 Rails, 11 SQL checks). The payoff holds for about 5 seconds, then the 11.5-second loop restarts.
 
 ## How it was made
 
