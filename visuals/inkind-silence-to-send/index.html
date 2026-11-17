@@ -73,6 +73,9 @@ h1 em { font-style: normal; background: linear-gradient(135deg, var(--accent), v
 .day.gone { opacity: 0; }
 
 .notifs { position: relative; margin-top: 0.9em; flex: 1; }
+.dates { position: relative; height: 1.3em; }
+.dates span { position: absolute; inset: 0; opacity: 0; transition: opacity var(--fast) var(--ease); }
+.dates span.on { opacity: 1; }
 .none { text-align: center; font-size: 0.72em; color: var(--muted); opacity: 0.8; margin-top: 2.2em; transition: opacity var(--base) var(--ease); }
 .none.gone { opacity: 0; }
 .appicon { flex: none; width: 1.8em; height: 1.8em; border-radius: 0.45em; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 0.95em; }
@@ -124,7 +127,8 @@ body.embed .controls { display: none; }
           <div class="kicker">First-reward journey · Snowflake → Braze</div>
           <h1>$25 unused. Two saved spots.<br><span class="hs"><em data-cls="on:0-8">No message.</em><em data-cls="on:9-">Now there's one.</em></span></h1>
           <div class="caps">
-            <p class="cap" data-cls="on:0-3">The intent was there. <b>Nothing followed up.</b></p>
+            <p class="cap" data-cls="on:0-1">The intent was there.</p>
+            <p class="cap" data-cls="on:2-3">Two weeks later, <b>nothing had followed up.</b></p>
             <p class="cap" data-cls="on:4-8">So I built the message that should have reached me.</p>
             <p class="cap" data-cls="on:9-">It sends <b>only when the data is right.</b></p>
           </div>
@@ -133,12 +137,7 @@ body.embed .controls { display: none; }
         <div class="mid">
           <div class="phone" aria-label="Phone lock screen">
             <div class="notch"></div>
-            <div class="clock"><div class="t">6:42</div><div class="d">Tuesday evening</div></div>
-            <div class="day" data-cls="quiet:2-8 gone:9-">
-              <span data-cls="on:0">Day 1</span>
-              <span data-cls="on:1">Day 7</span>
-              <span data-cls="on:2-">Day 14 · nothing</span>
-            </div>
+            <div class="clock"><div class="t">6:42</div><div class="d dates"><span data-cls="on:0">Tuesday, October 14</span><span data-cls="on:1">Tuesday, October 21</span><span data-cls="on:2-">Tuesday, October 28</span></div></div>
             <div class="notifs">
               <div class="push" data-cls="on:9-">
                 <div class="row"><span class="appicon">R</span>Rewards<span class="now">now</span></div>
