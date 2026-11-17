@@ -4,7 +4,7 @@ The LinkedIn visual for the first-reward journey post. It opens on a $25 reward 
 
 ## What it does
 
-- **Hook (0–2.6 s):** a lock screen with a $25 unused reward and two saved spots. A day counter goes from Day 1 to Day 7 to "Day 14 · nothing".
+- **Hook (0–2.6 s):** the headline names the $25 reward and the two saved spots. The lock screen shows only what the user would see: no notifications, while a day counter goes from Day 1 to Day 7 to "Day 14 · nothing".
 - **Build (3.3–5.3 s):** Rails outbox, Snowflake view, Braze profile and Liquid checks light up in order.
 - **Payoff (6 s on):** the push arrives ("Your $25 is waiting at Lantern Row"), the headline changes to "Now there's one.", and the test counts appear (184 Liquid, 146 Rails, 11 SQL checks). The payoff holds for about 5 seconds, then the 11.5-second loop restarts.
 

@@ -73,16 +73,9 @@ h1 em { font-style: normal; background: linear-gradient(135deg, var(--accent), v
 .day.gone { opacity: 0; }
 
 .notifs { position: relative; margin-top: 0.9em; flex: 1; }
-.none { text-align: center; font-size: 0.7em; color: var(--muted); opacity: 0.8; margin-top: 1em; transition: opacity var(--base) var(--ease); }
+.none { text-align: center; font-size: 0.72em; color: var(--muted); opacity: 0.8; margin-top: 2.2em; transition: opacity var(--base) var(--ease); }
 .none.gone { opacity: 0; }
-.wallet { background: rgba(250,247,247,0.07); border: 1px solid rgba(250,247,247,0.1); border-radius: 1em; padding: 0.7em 0.8em; font-size: 0.72em; }
-.wallet .row { display: flex; align-items: center; gap: 0.5em; }
 .appicon { flex: none; width: 1.8em; height: 1.8em; border-radius: 0.45em; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-family: var(--display); font-weight: 800; font-size: 0.95em; }
-.wallet .amt { font-family: var(--display); font-weight: 800; font-size: 1.6em; color: var(--accent); line-height: 1; margin-top: 0.35em; }
-.wallet .sub { color: var(--muted); margin-top: 0.15em; }
-.wallet ul { list-style: none; padding: 0; margin-top: 0.55em; display: grid; gap: 0.25em; }
-.wallet li { display: flex; gap: 0.45em; align-items: center; color: var(--body); }
-.wallet li::before { content: "♥"; color: var(--accent); font-size: 0.9em; }
 
 .push { position: absolute; left: 0; right: 0; top: 0; background: rgba(250,247,247,0.94); color: #1b151e; border-radius: 1em; padding: 0.7em 0.8em; font-size: 0.72em; box-shadow: 0 0.8em 1.8em rgba(0,0,0,0.45); opacity: 0; transform: translateY(-2.2em) scale(0.96); transition: opacity var(--base) var(--ease), transform 640ms var(--ease); }
 .push.on { opacity: 1; transform: none; }
@@ -90,8 +83,6 @@ h1 em { font-style: normal; background: linear-gradient(135deg, var(--accent), v
 .push .row .now { margin-left: auto; }
 .push b { display: block; font-size: 1.12em; margin-top: 0.4em; line-height: 1.2; }
 .push p { margin-top: 0.2em; line-height: 1.3; color: #3a3339; }
-.wallet-wrap { transition: transform 640ms var(--ease); }
-.wallet-wrap.down { transform: translateY(var(--push-h, 8.4em)); }
 
 /* ── Pipeline ─────────────────────────────────────────────────────────── */
 .pipe { display: grid; gap: 0.5em; position: relative; }
@@ -154,15 +145,7 @@ body.embed .controls { display: none; }
                 <b>Your $25 is waiting at Lantern Row</b>
                 <p>The spot you saved. Good on a $50 order or more.</p>
               </div>
-              <div class="wallet-wrap" data-cls="down:9-">
-                <div class="wallet">
-                  <div class="row"><span class="appicon">R</span>Rewards app</div>
-                  <div class="amt">$25</div>
-                  <div class="sub">First reward · unused</div>
-                  <ul><li>Lantern Row</li><li>Tidepool Taqueria</li></ul>
-                </div>
-                <div class="none" data-cls="gone:9-">No notifications</div>
-              </div>
+              <div class="none" data-cls="gone:9-">No notifications</div>
             </div>
           </div>
 
@@ -216,10 +199,6 @@ function show(step) {
     for (const p of parts) el.classList.toggle(p.cls, want.has(p.cls));
   }
 }
-function measurePush() {
-  const push = frame.querySelector(".push");
-  frame.querySelector(".wallet-wrap").style.setProperty("--push-h", push.offsetHeight / parseFloat(getComputedStyle(push.parentElement).fontSize) + 0.6 + "em");
-}
 let timers = [];
 function play() {
   timers.forEach(clearTimeout); timers = [];
@@ -249,16 +228,13 @@ window.renderAt = (t) => {
 function setFormat(f) {
   frame.dataset.format = f;
   document.querySelectorAll("button[data-format]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.format === f));
-  requestAnimationFrame(measurePush);
 }
 if (q.get("embed") === "1") document.body.classList.add("embed");
 setFormat(q.get("format") === "1x1" ? "1x1" : "4x5");
-window.addEventListener("resize", measurePush);
-document.fonts.ready.then(measurePush);
 document.querySelectorAll("button[data-format]").forEach((b) => b.addEventListener("click", () => setFormat(b.dataset.format)));
 document.getElementById("replay").addEventListener("click", play);
 const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (q.get("render") === "1") { measurePush(); }
+if (q.get("render") === "1") { /* renderAt drives the frames */ }
 else if (q.has("step")) { frame.classList.add("no-anim"); show(+q.get("step")); }
 else if (reduce) { frame.classList.add("no-anim"); show(STILL); }
 else play();
