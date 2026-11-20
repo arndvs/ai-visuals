@@ -22,6 +22,13 @@ there, not in a generator.
 
 Taken from the dark theme in the site's `src/app/globals.css`.
 
+> **The site has since moved to a blue-teal theme** (site PR #101): background `#051117`,
+> card `#0A181F`, accent `#2DD4BF`, gradient to `#99F6E4`, Bebas Neue headlines and IBM
+> Plex Sans and Mono. The table below still describes the existing cards and heroes. New
+> work uses the current theme; [`rag-cost-levers`](../visuals/rag-cost-levers) is the first,
+> and its tokens are the reference until `style.py` and `templates/site-visual.html` are
+> updated.
+
 | Role | Value | Token in `style.py` |
 |---|---|---|
 | Background, share cards | `#0A0A0A` | `BG` |
